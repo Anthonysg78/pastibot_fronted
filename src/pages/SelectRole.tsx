@@ -10,15 +10,16 @@ import "./SelectRole.css";
 const SelectRole: React.FC = () => {
   const history = useHistory();
   const { user } = useAuth(); // 👈 Usar contexto real
+  const [caregiverCode, setCaregiverCode] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState<"care" | "patient" | null>(null);
 
   // 🛡️ Si el usuario ya tiene rol, no dejarle estar aquí
   React.useEffect(() => {
     if (user && user.role) {
-      history.replace(user.role === "CUIDADOR" ? "/care/home" : "/patient/home");
+      window.location.href = user.role === "CUIDADOR" ? "/care/home" : "/patient/home";
     }
-  }, [user, history]);
+  }, [user]);
 
   const handleSelect = (role: "care" | "patient") => {
     setSelectedRole(role);
@@ -39,35 +40,36 @@ const SelectRole: React.FC = () => {
     const backendRole =
       selectedRole === "care" ? "CUIDADOR" : "PACIENTE";
 
+    if (backendRole === 'PACIENTE' && !caregiverCode) {
+      alert("Debes ingresar el código de tu cuidador.");
+      return;
+    }
+
     try {
       // Guardar el rol en la BD
       const res = await api.post(
         "/auth/set-role",
-        { role: backendRole },
+        {
+          role: backendRole,
+          caregiverCode: backendRole === 'PACIENTE' ? caregiverCode : undefined
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // ✅ ACTUALIZAR TOKEN Y ESTADO (Muy importante para persistir el rol)
+      // ✅ ACTUALIZAR TOKEN Y ESTADO
       if (res.data?.accessToken) {
         localStorage.setItem("token", res.data.accessToken);
-        // Podríamos llamar a getProfile() aquí si lo tuviéramos expuesto, 
-        // pero forzaremos una recarga al navegar o el AuthContext se actualizará solo si recargamos.
-        // Mejor opción: Forzar recarga completa para asegurar estado limpio.
         window.location.href = selectedRole === "care" ? "/care/home" : "/patient/home";
         return;
       }
 
-      // Fallback si no hay token nuevo (no debería pasar)
-      if (selectedRole === "care") {
-        history.push("/login?role=" + selectedRole);
-      } else {
-        history.push("/patient/home");
-      }
+      history.push(selectedRole === "care" ? "/care/home" : "/patient/home");
 
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Error al guardar el rol");
-      setShowModal(false);
+      const msg = err?.response?.data?.message || "Error al guardar el rol";
+      alert(msg);
+      // No cerramos el modal si hay error para que pueda corregir el código
     }
   };
 
@@ -104,20 +106,63 @@ const SelectRole: React.FC = () => {
         </div>
 
         <IonModal isOpen={showModal} className="confirm-modal" onDidDismiss={() => setShowModal(false)}>
-          <div className="modal-content">
-            <h2>¿Confirmar rol?</h2>
-            <p>
+          <div className="modal-content" style={{ padding: '25px', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', marginBottom: '10px' }}>
+              Confirmar como {selectedRole === 'care' ? 'Cuidador' : 'Paciente'}
+            </h2>
+
+            <p style={{ color: '#666', marginBottom: '20px' }}>
               {selectedRole === "care"
-                ? "¿Deseas continuar como Cuidador?"
-                : "¿Deseas continuar como Paciente?"}
+                ? "Tendrás acceso a la gestión de todos los pacientes y el robot."
+                : "Necesitas vincularte a un cuidador para recibir tus medicinas."}
             </p>
 
-            <div className="modal-buttons">
-              <button className="btn-cancel" onClick={() => setShowModal(false)}>
-                Atrás
+            {selectedRole === 'patient' && (
+              <div style={{ marginBottom: '20px' }}>
+                <input
+                  type="text"
+                  placeholder="CÓDIGO DEL CUIDADOR"
+                  value={caregiverCode}
+                  onChange={(e) => setCaregiverCode(e.target.value.toUpperCase())}
+                  style={{
+                    width: '100%',
+                    padding: '15px',
+                    borderRadius: '12px',
+                    border: '2px solid #FF7043',
+                    fontSize: '1.1rem',
+                    textAlign: 'center',
+                    fontWeight: 900,
+                    letterSpacing: '2px'
+                  }}
+                />
+                <p style={{ fontSize: '0.8rem', color: '#FF7043', marginTop: '8px', fontWeight: 600 }}>
+                  ⚠️ Pide el código de 6 letras a tu cuidador.
+                </p>
+              </div>
+            )}
+
+            <div className="modal-buttons" style={{ display: 'flex', gap: '10px' }}>
+              <button
+                className="btn-cancel"
+                onClick={() => setShowModal(false)}
+                style={{ flex: 1, padding: '12px', borderRadius: '12px', background: '#f1f5f9', border: 'none', fontWeight: 700 }}
+              >
+                Cancelar
               </button>
-              <button className="btn-confirm" onClick={confirmRole}>
-                Sí, continuar
+              <button
+                className="btn-confirm"
+                onClick={confirmRole}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: '12px',
+                  background: selectedRole === 'care' ? 'var(--primary)' : '#F4511E',
+                  color: 'white',
+                  border: 'none',
+                  fontWeight: 700
+                }}
+              >
+                Confirmar
               </button>
             </div>
           </div>
