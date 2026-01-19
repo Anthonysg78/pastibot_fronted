@@ -1,0 +1,98 @@
+.status-modal {
+    --height: auto;
+    --width: 85%;
+    --max-width: 400px;
+    --border-radius: 32px;
+}
+
+.status-modal::part(backdrop) {
+    backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.status-modal-content {
+    padding: 40px 24px 35px;
+    text-align: center;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.status-icon-container {
+    width: 90px;
+    height: 90px;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 25px;
+    font-size: 3.5rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+.status-icon-container.success {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    color: #2e7d32;
+}
+
+.status-icon-container.error {
+    background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+    color: #c62828;
+}
+
+.status-icon-container.warning {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    color: #ef6c00;
+}
+
+.status-title {
+    font-weight: 900;
+    margin: 0 0 12px 0;
+    color: #1e293b;
+    font-size: 1.6rem;
+    letter-spacing: -0.5px;
+}
+
+.status-message {
+    color: #64748b;
+    font-size: 1.1rem;
+    line-height: 1.5;
+    margin: 0 0 30px 0;
+    font-weight: 500;
+}
+
+.status-btn {
+    width: 100%;
+    padding: 18px;
+    border-radius: 20px;
+    border: none;
+    font-weight: 800;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.status-btn:active {
+    transform: scale(0.96);
+}
+
+.status-btn.success {
+    background: #2e7d32;
+    color: white;
+    box-shadow: 0 10px 20px rgba(46, 125, 50, 0.3);
+}
+
+.status-btn.error {
+    background: #c62828;
+    color: white;
+    box-shadow: 0 10px 20px rgba(198, 40, 40, 0.3);
+}
+
+.status-btn.warning {
+    background: #ef6c00;
+    color: white;
+    box-shadow: 0 10px 20px rgba(239, 108, 0, 0.3);
+}

@@ -1,75 +1,89 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { IonPage, IonContent, IonModal } from "@ionic/react";
 import { FaUserNurse } from "react-icons/fa";
 import { FaUser } from "react-icons/fa6";
-import { useHistory, useLocation } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api/axios";
+import StatusModal from "../components/StatusModal";
 import "./SelectRole.css";
 
 const SelectRole: React.FC = () => {
   const history = useHistory();
-  const { user } = useAuth(); // 👈 Usar contexto real
-  const [caregiverCode, setCaregiverCode] = useState("");
-  const [showModal, setShowModal] = useState(false);
+  const { user, getProfile, loading: authLoading } = useAuth();
+
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState<"care" | "patient" | null>(null);
+  const [caregiverCode, setCaregiverCode] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Status Modal State
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{ type: 'success' | 'error' | 'warning', title: string, message: string }>({
+    type: 'success',
+    title: '',
+    message: ''
+  });
+
+  const showStatus = (type: 'success' | 'error' | 'warning', title: string, message: string) => {
+    setModalConfig({ type, title, message });
+    setModalOpen(true);
+  };
 
   // 🛡️ Si el usuario ya tiene rol, no dejarle estar aquí
-  React.useEffect(() => {
-    if (user && user.role) {
+  useEffect(() => {
+    if (user && user.role && !authLoading) {
       window.location.href = user.role === "CUIDADOR" ? "/care/home" : "/patient/home";
     }
-  }, [user]);
+  }, [user, authLoading]);
 
   const handleSelect = (role: "care" | "patient") => {
     setSelectedRole(role);
-    setShowModal(true);
+    setShowConfirmModal(true);
   };
 
-  // ============================================================
-  // 🚀 GUARDAR EL ROL EN EL BACKEND
-  // ============================================================
   const confirmRole = async () => {
     const token = localStorage.getItem("token");
 
     if (!token) {
-      alert("No autorizado");
+      showStatus('error', 'Sesión expirada', 'Debes volver a iniciar sesión.');
+      history.push("/login");
       return;
     }
 
-    const backendRole =
-      selectedRole === "care" ? "CUIDADOR" : "PACIENTE";
+    const backendRole = selectedRole === "care" ? "CUIDADOR" : "PACIENTE";
 
     if (backendRole === 'PACIENTE' && !caregiverCode) {
-      alert("Debes ingresar el código de tu cuidador.");
+      showStatus('warning', 'Código faltante', 'Por favor ingresa el código de tu cuidador.');
       return;
     }
 
+    setLoading(true);
     try {
-      // Guardar el rol en la BD
       const res = await api.post(
         "/auth/set-role",
         {
           role: backendRole,
           caregiverCode: backendRole === 'PACIENTE' ? caregiverCode : undefined
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
+        }
       );
 
-      // ✅ ACTUALIZAR TOKEN Y ESTADO
       if (res.data?.accessToken) {
         localStorage.setItem("token", res.data.accessToken);
-        window.location.href = selectedRole === "care" ? "/care/home" : "/patient/home";
-        return;
+        showStatus('success', '¡Rol asignado!', 'Bienvenido a Pastibot. Ahora serás redirigido.');
+        setTimeout(() => {
+          window.location.href = backendRole === 'CUIDADOR' ? "/care/home" : "/patient/home";
+        }, 1500);
+      } else {
+        history.push(backendRole === "CUIDADOR" ? "/care/home" : "/patient/home");
       }
-
-      history.push(selectedRole === "care" ? "/care/home" : "/patient/home");
 
     } catch (err: any) {
       console.error(err);
-      const msg = err?.response?.data?.message || "Error al guardar el rol";
-      alert(msg);
-      // No cerramos el modal si hay error para que pueda corregir el código
+      const msg = err?.response?.data?.message || "Ocurrió un error al guardar tu rol.";
+      showStatus('error', 'Error', msg);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -78,10 +92,6 @@ const SelectRole: React.FC = () => {
       <IonContent fullscreen className="selectrole-page">
         <div className="top-gradient"></div>
         <div className="bottom-gradient"></div>
-
-        <div className="role-bubble" style={{ width: '100px', height: '100px', top: '15%', left: '10%' }}></div>
-        <div className="role-bubble" style={{ width: '60px', height: '60px', bottom: '20%', right: '15%', animationName: 'floatAnimReverse' }}></div>
-        <div className="role-bubble" style={{ width: '40px', height: '40px', top: '40%', right: '10%' }}></div>
 
         <div className="role-container">
           <h1 className="title">Elige tu Rol</h1>
@@ -94,10 +104,7 @@ const SelectRole: React.FC = () => {
               <p>Control total del robot y pacientes</p>
             </div>
 
-            <div className="role-card paciente" onClick={() => handleSelect("patient")} style={{
-              background: 'linear-gradient(135deg, #FF7043, #F4511E)',
-              boxShadow: '0 8px 20px rgba(244, 81, 30, 0.2)'
-            }}>
+            <div className="role-card paciente" onClick={() => handleSelect("patient")}>
               <FaUser className="role-icon" />
               <h2>Paciente</h2>
               <p>Recibe tus recordatorios y tomas</p>
@@ -105,20 +112,21 @@ const SelectRole: React.FC = () => {
           </div>
         </div>
 
-        <IonModal isOpen={showModal} className="confirm-modal" onDidDismiss={() => setShowModal(false)}>
-          <div className="modal-content" style={{ padding: '25px', textAlign: 'center' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', marginBottom: '10px' }}>
+        {/* MODAL DE CONFIRMACIÓN CUSTOM */}
+        <IonModal isOpen={showConfirmModal} onDidDismiss={() => setShowConfirmModal(false)} className="confirm-modal">
+          <div className="modal-content" style={{ padding: '30px', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--primary)', marginBottom: '15px' }}>
               Confirmar como {selectedRole === 'care' ? 'Cuidador' : 'Paciente'}
             </h2>
 
-            <p style={{ color: '#666', marginBottom: '20px' }}>
+            <p style={{ color: '#64748b', marginBottom: '25px', lineHeight: '1.5' }}>
               {selectedRole === "care"
-                ? "Tendrás acceso a la gestión de todos los pacientes y el robot."
-                : "Necesitas vincularte a un cuidador para recibir tus medicinas."}
+                ? "Como cuidador, podrás gestionar medicinas, pacientes y el robot de forma remota."
+                : "Como paciente, recibirás notificaciones en tiempo real y el robot se acercará a entregarte tu medicina."}
             </p>
 
             {selectedRole === 'patient' && (
-              <div style={{ marginBottom: '20px' }}>
+              <div style={{ marginBottom: '25px' }}>
                 <input
                   type="text"
                   placeholder="CÓDIGO DEL CUIDADOR"
@@ -126,47 +134,58 @@ const SelectRole: React.FC = () => {
                   onChange={(e) => setCaregiverCode(e.target.value.toUpperCase())}
                   style={{
                     width: '100%',
-                    padding: '15px',
-                    borderRadius: '12px',
-                    border: '2px solid #FF7043',
-                    fontSize: '1.1rem',
+                    padding: '16px',
+                    borderRadius: '16px',
+                    border: '2px solid #F4511E',
+                    fontSize: '1.2rem',
                     textAlign: 'center',
                     fontWeight: 900,
-                    letterSpacing: '2px'
+                    letterSpacing: '3px',
+                    background: '#FFF3E0'
                   }}
                 />
-                <p style={{ fontSize: '0.8rem', color: '#FF7043', marginTop: '8px', fontWeight: 600 }}>
-                  ⚠️ Pide el código de 6 letras a tu cuidador.
+                <p style={{ fontSize: '0.85rem', color: '#F4511E', marginTop: '10px', fontWeight: 700 }}>
+                  ⚠️ Ingresa el código de 6 letras de tu cuidador.
                 </p>
               </div>
             )}
 
-            <div className="modal-buttons" style={{ display: 'flex', gap: '10px' }}>
+            <div className="modal-buttons" style={{ display: 'flex', gap: '12px' }}>
               <button
                 className="btn-cancel"
-                onClick={() => setShowModal(false)}
-                style={{ flex: 1, padding: '12px', borderRadius: '12px', background: '#f1f5f9', border: 'none', fontWeight: 700 }}
+                onClick={() => setShowConfirmModal(false)}
+                style={{ flex: 1, padding: '15px', borderRadius: '16px', background: '#f1f5f9', color: '#64748b', border: 'none', fontWeight: 700 }}
               >
                 Cancelar
               </button>
               <button
                 className="btn-confirm"
                 onClick={confirmRole}
+                disabled={loading}
                 style={{
                   flex: 1,
-                  padding: '12px',
-                  borderRadius: '12px',
+                  padding: '15px',
+                  borderRadius: '16px',
                   background: selectedRole === 'care' ? 'var(--primary)' : '#F4511E',
                   color: 'white',
                   border: 'none',
-                  fontWeight: 700
+                  fontWeight: 700,
+                  boxShadow: '0 8px 20px rgba(0,0,0,0.1)'
                 }}
               >
-                Confirmar
+                {loading ? 'Guardando...' : 'Confirmar'}
               </button>
             </div>
           </div>
         </IonModal>
+
+        <StatusModal
+          isOpen={modalOpen}
+          type={modalConfig.type}
+          title={modalConfig.title}
+          message={modalConfig.message}
+          onClose={() => setModalOpen(false)}
+        />
       </IonContent>
     </IonPage>
   );

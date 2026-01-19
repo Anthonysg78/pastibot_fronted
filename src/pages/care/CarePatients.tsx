@@ -24,6 +24,8 @@ import { api } from "../../api/axios";
 import { personCircle, chevronForwardOutline, checkmarkCircle, refreshOutline, pencilOutline, closeOutline, saveOutline, trashOutline, add } from "ionicons/icons";
 import "./CarePage.css";
 
+import StatusModal from "../../components/StatusModal";
+
 type Patient = {
   id: number;
   name: string;
@@ -39,9 +41,22 @@ type Patient = {
 
 const CarePatients: React.FC = () => {
   const history = useHistory();
-  const { user, getProfile } = useAuth();
+  const { user, getProfile, loading: authLoading } = useAuth();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Status Modal State
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{ type: 'success' | 'error' | 'warning', title: string, message: string }>({
+    type: 'success',
+    title: '',
+    message: ''
+  });
+
+  const showModal = (type: 'success' | 'error' | 'warning', title: string, message: string) => {
+    setModalConfig({ type, title, message });
+    setModalOpen(true);
+  };
 
   // Edit Patient Modal State
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
@@ -54,14 +69,23 @@ const CarePatients: React.FC = () => {
 
   // Fallback useEffect al montar
   useEffect(() => {
-    // 🛡️ SEGURIDAD: Solo cuidadores
-    if (user && user.role === 'PACIENTE') {
-      window.location.href = "/patient/home";
+    // Solo actuar si auth ya terminó de cargar
+    if (authLoading) return;
+
+    if (!user) {
+      history.replace("/login");
       return;
     }
+
+    // 🛡️ SEGURIDAD: Solo cuidadores
+    if (user.role === 'PACIENTE') {
+      history.replace("/patient/home");
+      return;
+    }
+
     loadPatients();
     getProfile(); // Asegurar datos frescos del cuidador
-  }, [user]);
+  }, [user, authLoading]);
 
   // 🚀 REFRESCAR AUTOMÁTICAMENTE AL ENTRAR A LA PESTAÑA
   useIonViewWillEnter(() => {
@@ -74,14 +98,16 @@ const CarePatients: React.FC = () => {
     setLoading(true);
     try {
       const res = await api.get("/patients");
-      console.log("📦 Pacientes recibidos del backend:", res.data);
       if (Array.isArray(res.data)) {
         setPatients(res.data);
       } else {
         setPatients([]);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("❌ Error cargando pacientes:", err);
+      if (err.response?.status !== 401) {
+        showModal('error', 'Error de Conexión', 'No se pudieron cargar los pacientes. Revisa tu internet.');
+      }
     } finally {
       setLoading(false);
     }
@@ -119,9 +145,10 @@ const CarePatients: React.FC = () => {
       });
       setEditingPatient(null);
       loadPatients(); // Recargar lista
+      showModal('success', 'Paciente Actualizado', 'Los datos se guardaron correctamente.');
     } catch (err) {
       console.error("Error actualizando paciente:", err);
-      alert("No se pudo actualizar el paciente");
+      showModal('error', 'Error', 'No se pudo actualizar la información del paciente.');
     } finally {
       setSaving(false);
     }
@@ -133,9 +160,10 @@ const CarePatients: React.FC = () => {
       await api.delete(`/patients/${patientToDelete.id}`);
       setPatientToDelete(null);
       loadPatients();
+      showModal('success', 'Paciente Eliminado', 'El paciente ha sido removido de tu lista.');
     } catch (err) {
       console.error("Error eliminando paciente:", err);
-      alert("No se pudo eliminar el paciente");
+      showModal('error', 'Error', 'No se pudo eliminar al paciente.');
     }
   };
 
@@ -369,6 +397,14 @@ const CarePatients: React.FC = () => {
             </button>
           </div>
         </IonModal>
+
+        <StatusModal
+          isOpen={modalOpen}
+          type={modalConfig.type}
+          title={modalConfig.title}
+          message={modalConfig.message}
+          onClose={() => setModalOpen(false)}
+        />
       </IonContent>
     </IonPage>
   );

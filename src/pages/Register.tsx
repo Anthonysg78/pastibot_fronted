@@ -1,66 +1,82 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useHistory, useLocation } from "react-router-dom";
-import { IonPage, IonContent } from "@ionic/react";
+import { IonPage, IonContent, IonButton } from "@ionic/react";
 import { FaFacebook } from "react-icons/fa";
 import { FaSquareXTwitter } from "react-icons/fa6";
 import { FcGoogle } from "react-icons/fc";
 
-import { api, setAuthToken } from "../api/axios";
 import { useAuth } from "../context/AuthContext";
+import StatusModal from "../components/StatusModal";
 import "./Register.css";
 
 const Register: React.FC = () => {
   const history = useHistory();
   const location = useLocation();
-  const { user, register: authRegister } = useAuth();
-  const queryParams = new URLSearchParams(location.search);
-  const role = queryParams.get("role"); // CUIDADOR o PACIENTE
+  const { user, register: authRegister, loading: authLoading } = useAuth();
 
-  // 🛡️ Si ya hay sesión, no registrarse otra vez
-  React.useEffect(() => {
-    if (user) {
-      history.replace(role === "CUIDADOR" ? "/care/home" : "/patient/home");
-    }
-  }, [user, history, role]);
+  const queryParams = new URLSearchParams(location.search);
+  const role = queryParams.get("role") || "PACIENTE"; // CUIDADOR o PACIENTE
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [confirm, setConfirm] = useState("");
   const [caregiverCode, setCaregiverCode] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const [error, setError] = useState("");
+  // Status Modal State
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{ type: 'success' | 'error' | 'warning', title: string, message: string }>({
+    type: 'success',
+    title: '',
+    message: ''
+  });
+
+  const showModal = (type: 'success' | 'error' | 'warning', title: string, message: string) => {
+    setModalConfig({ type, title, message });
+    setModalOpen(true);
+  };
+
+  // 🛡️ Si ya hay sesión, no registrarse otra vez
+  useEffect(() => {
+    if (user && !authLoading) {
+      history.replace(user.role === "CUIDADOR" ? "/care/home" : "/patient/home");
+    }
+  }, [user, history, authLoading]);
 
   const validarFormulario = () => {
-    setError("");
-
     if (role === 'CUIDADOR') {
-      setError("El registro de cuidadores está deshabilitado.");
+      showModal('error', 'Acceso denegado', 'El registro de cuidadores está deshabilitado. Usa la cuenta maestra.');
+      return false;
+    }
+
+    if (!name || !email || !pass || !confirm) {
+      showModal('warning', 'Campos vacíos', 'Completa todos los campos para continuar.');
       return false;
     }
 
     if (role === 'PACIENTE' && !caregiverCode) {
-      setError("Debes ingresar el código de tu cuidador.");
+      showModal('warning', 'Código requerido', 'Debes ingresar el código de tu cuidador para vincularte.');
       return false;
     }
 
     if (/\d/.test(name)) {
-      setError("El nombre no puede contener números.");
+      showModal('warning', 'Nombre inválido', 'El nombre no debe contener números.');
       return false;
     }
 
     if (!email.includes("@") || !email.includes(".")) {
-      setError("Ingresa un correo electrónico válido.");
+      showModal('warning', 'Email inválido', 'Ingresa un correo electrónico profesional válido.');
       return false;
     }
 
     if (pass.length < 8) {
-      setError("La contraseña debe tener al menos 8 caracteres.");
+      showModal('warning', 'Contraseña corta', 'La contraseña debe tener al menos 8 caracteres por seguridad.');
       return false;
     }
 
     if (pass !== confirm) {
-      setError("Las contraseñas no coinciden.");
+      showModal('warning', 'Error de coincidencia', 'Las contraseñas no son iguales.');
       return false;
     }
 
@@ -70,38 +86,24 @@ const Register: React.FC = () => {
   const handleRegister = async () => {
     if (!validarFormulario()) return;
 
+    setLoading(true);
     try {
       await authRegister({
         name,
         email,
         password: pass,
         gender: null,
-        role: role || null,
+        role: role as any,
         caregiverCode: role === 'PACIENTE' ? caregiverCode : undefined
       });
 
-      // Redirigimos según el rol
-      if (role === "CUIDADOR") {
-        history.push("/care/home");
-      } else {
-        history.push("/patient/home");
-      }
-
+      showModal('success', '¡Cuenta creada!', 'Te has registrado correctamente en Pastibot.');
+      // La redirección ocurrirá vía useEffect cuando el user se actualice
     } catch (err: any) {
-      const msg = err?.response?.data?.message;
-
-      if (msg?.includes("El correo ya está registrado")) {
-        setError("Ese correo ya está en uso.");
-        return;
-      }
-
-      if (msg?.includes("El código de cuidador")) {
-        setError(msg);
-        return;
-      }
-
-      console.log(err);
-      setError("Error al registrar usuario.");
+      const msg = err?.response?.data?.message || "Error al registrar usuario.";
+      showModal('error', 'Error de registro', msg);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -113,21 +115,11 @@ const Register: React.FC = () => {
 
         <div className="register-container">
           <h1 className="title">
-            {role === 'CUIDADOR' ? 'Registro Cuidador' : role === 'PACIENTE' ? 'Registro Paciente' : 'Crear cuenta'}
+            {role === 'CUIDADOR' ? 'Registro Cuidador' : 'Crear Cuenta'}
           </h1>
           <p className="subtitle">
-            {role === 'PACIENTE' ? 'Únete a tu cuidador para empezar' : 'Regístrate para empezar a usar Pastibot'}
+            {role === 'PACIENTE' ? 'Únete a tu cuidador para empezar' : 'Regístrate para cuidar a tus seres queridos'}
           </p>
-
-          {role === 'PACIENTE' && (
-            <div style={{ background: '#FFF3E0', padding: '10px', borderRadius: '10px', marginBottom: '20px', fontSize: '0.85rem', color: '#E65100', border: '1px solid #FFE0B2' }}>
-              ⚠️ Necesitas el código de 6 letras (ej. PASTIBOT) que te dio tu cuidador.
-            </div>
-          )}
-
-          {error && (
-            <p style={{ color: "red", marginBottom: 10 }}>{error}</p>
-          )}
 
           <form className="register-form" onSubmit={(e) => e.preventDefault()}>
             <input
@@ -145,13 +137,18 @@ const Register: React.FC = () => {
             />
 
             {role === 'PACIENTE' && (
-              <input
-                type="text"
-                placeholder="Código del Cuidador (Ejem: PASTIBOT)"
-                value={caregiverCode}
-                onChange={(e) => setCaregiverCode(e.target.value.toUpperCase())}
-                style={{ border: '2px solid #E65100', fontWeight: 'bold' }}
-              />
+              <div style={{ marginBottom: '15px' }}>
+                <input
+                  type="text"
+                  placeholder="CÓDIGO CUIDADOR (Ej: PASTIBOT)"
+                  value={caregiverCode}
+                  onChange={(e) => setCaregiverCode(e.target.value.toUpperCase())}
+                  style={{ border: '2px solid #E65100', fontWeight: 'bold', textAlign: 'center', letterSpacing: '2px' }}
+                />
+                <p style={{ fontSize: '0.75rem', color: '#E65100', marginTop: '5px', textAlign: 'center', fontWeight: 600 }}>
+                  ⚠️ Necesitas el código que te dio tu cuidador.
+                </p>
+              </div>
             )}
 
             <input
@@ -168,20 +165,21 @@ const Register: React.FC = () => {
               onChange={(e) => setConfirm(e.target.value)}
             />
 
-            <button
-              type="button"
+            <IonButton
+              expand="block"
               className="register-btn"
               onClick={handleRegister}
+              disabled={loading}
             >
-              CREAR UNA CUENTA
-            </button>
+              {loading ? 'Procesando...' : 'CREAR UNA CUENTA'}
+            </IonButton>
           </form>
 
           <p className="signin-text">
             ¿Ya tienes una cuenta?{" "}
             <span
               className="link"
-              onClick={() => history.push("/login" + (role ? `?role=${role}` : ""))}
+              onClick={() => history.push("/login?role=" + role)}
             >
               Iniciar sesión
             </span>
@@ -207,6 +205,14 @@ const Register: React.FC = () => {
             <FaSquareXTwitter className="social-icon twitter" />
           </div>
         </div>
+
+        <StatusModal
+          isOpen={modalOpen}
+          type={modalConfig.type}
+          title={modalConfig.title}
+          message={modalConfig.message}
+          onClose={() => setModalOpen(false)}
+        />
       </IonContent>
     </IonPage>
   );

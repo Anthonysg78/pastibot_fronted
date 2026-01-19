@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { api, setAuthToken } from "../api/axios";
 
 interface User {
@@ -31,6 +31,30 @@ export const AuthProvider = ({ children }: any) => {
   const [token, setTokenState] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
+  // Obtener perfil real - Usamos useCallback para que no cambie la referencia
+  const getProfile = useCallback(async () => {
+    const savedToken = localStorage.getItem("token");
+    if (!savedToken) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await api.get("/auth/profile");
+      if (res.data) {
+        setUser(res.data);
+      }
+    } catch (err: any) {
+      console.error("❌ Error en getProfile:", err);
+      // Solo limpiamos si es un error de autenticación real
+      if (err.response?.status === 401) {
+        logout();
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Cargar token guardado al abrir app
   useEffect(() => {
     const savedToken = localStorage.getItem("token");
@@ -41,57 +65,34 @@ export const AuthProvider = ({ children }: any) => {
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [getProfile]);
 
   // LOGIN normal
   const login = async (email: string, password: string) => {
     const res = await api.post("/auth/login", { email, password });
-
-    if (!res || !res.data) {
-      console.warn("⚠ Backend no devolvió datos en login()");
-      return null;
+    if (res.data?.accessToken) {
+      const { accessToken, user: loggedUser } = res.data;
+      localStorage.setItem("token", accessToken);
+      setAuthToken(accessToken);
+      setTokenState(accessToken);
+      setUser(loggedUser);
+      return res.data;
     }
-
-    const { accessToken, user } = res.data;
-
-    if (!user) {
-      console.warn("⚠ Backend no devolvió user en login()");
-      return null;
-    }
-
-    localStorage.setItem("token", accessToken);
-    setAuthToken(accessToken);
-    setTokenState(accessToken);
-
-    setUser(user);
-
-    return res.data; // 🔥 IMPORTANTE
+    return null;
   };
 
   // REGISTER normal
   const register = async (data: any) => {
     const res = await api.post("/auth/register", data);
-    const { accessToken, user } = res.data;
-
-    localStorage.setItem("token", accessToken);
-    setAuthToken(accessToken);
-    setTokenState(accessToken);
-
-    setUser(user);
-
-    return res.data; // 🔥 también lo devolvemos
-  };
-
-  // Obtener perfil real
-  const getProfile = async () => {
-    try {
-      const res = await api.get("/auth/profile");
-      setUser(res.data);
-    } catch {
-      console.log("No se pudo cargar perfil");
-    } finally {
-      setLoading(false);
+    if (res.data?.accessToken) {
+      const { accessToken, user: registeredUser } = res.data;
+      localStorage.setItem("token", accessToken);
+      setAuthToken(accessToken);
+      setTokenState(accessToken);
+      setUser(registeredUser);
+      return res.data;
     }
+    return res.data;
   };
 
   // LOGOUT
@@ -100,6 +101,7 @@ export const AuthProvider = ({ children }: any) => {
     setTokenState(null);
     setUser(null);
     setAuthToken(null);
+    setLoading(false);
   };
 
   return (

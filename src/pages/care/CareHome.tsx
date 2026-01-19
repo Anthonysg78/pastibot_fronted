@@ -18,20 +18,28 @@ interface RobotStatus {
 
 const CareHome: React.FC = () => {
   const history = useHistory();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [robotStatus, setRobotStatus] = useState<RobotStatus | null>(null);
   const [recentLogs, setRecentLogs] = useState<any[]>([]);
 
   useEffect(() => {
+    // Solo actuar si auth ya terminó de cargar
+    if (authLoading) return;
+
+    if (!user) {
+      history.replace("/login");
+      return;
+    }
+
     // 🛡️ SEGURIDAD: Si un paciente entra aquí por error, mandarlo a su sitio
-    if (user && user.role === 'PACIENTE') {
-      window.location.href = "/patient/home";
+    if (user.role === 'PACIENTE') {
+      history.replace("/patient/home");
       return;
     }
     loadData();
-  }, [user]);
+  }, [user, authLoading]);
 
   const loadData = async () => {
     try {
