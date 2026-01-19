@@ -135,9 +135,11 @@ const Login: React.FC = () => {
 
           {/* CREAR CUENTA & CAMBIAR ROL */}
           <div style={{ marginTop: '20px' }}>
-            <p className="create" style={{ marginBottom: '10px' }}>
-              ¿No tienes una cuenta? <a onClick={() => history.push("/register?role=" + activeRole)}>Regístrate aquí</a>
-            </p>
+            {activeRole === 'PACIENTE' && (
+              <p className="create" style={{ marginBottom: '10px' }}>
+                ¿No tienes una cuenta? <a onClick={() => history.push("/register?role=" + activeRole)}>Regístrate aquí</a>
+              </p>
+            )}
             <a
               onClick={() => history.push("/welcome")}
               style={{ fontSize: '0.85rem', color: '#90a4ae', textDecoration: 'none', fontWeight: 600, cursor: 'pointer' }}
