@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'io.ionic.starter',
-  appName: 'Pastibot2.0',
+  appId: 'com.pastibot.app',
+  appName: 'Pastibot',
   webDir: 'dist'
 };
 
