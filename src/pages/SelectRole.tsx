@@ -35,6 +35,17 @@ const SelectRole: React.FC = () => {
     if (user && user.role && !authLoading) {
       window.location.href = user.role === "CUIDADOR" ? "/care/home" : "/patient/home";
     }
+
+    // 🔥 AUTO-DETECTAR ROL SI VIENE DE LOGIN/REGISTER
+    const params = new URLSearchParams(window.location.search);
+    const roleParam = params.get("role");
+    if (roleParam === "PACIENTE") {
+      setSelectedRole("patient");
+      setShowConfirmModal(true);
+    } else if (roleParam === "CUIDADOR") {
+      setSelectedRole("care");
+      setShowConfirmModal(true);
+    }
   }, [user, authLoading]);
 
   const handleSelect = (role: "care" | "patient") => {

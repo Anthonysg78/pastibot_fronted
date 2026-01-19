@@ -61,7 +61,7 @@ const App: React.FC = () => {
             <Route exact path="/reset-password/:token">
               <ResetPassword />
             </Route>
-            <Route exact path="/selectrole">
+            <Route exact path="/select-role">
               <SelectRole />
             </Route>
             <Route exact path="/welcome">

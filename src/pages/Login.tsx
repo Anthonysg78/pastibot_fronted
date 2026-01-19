@@ -13,7 +13,7 @@ import "./Login.css";
 const Login: React.FC = () => {
   const history = useHistory();
   const location = useLocation();
-  const { login: authLogin, user, loading: authLoading } = useAuth();
+  const { login: authLogin, loginWithGoogle, loginWithFacebook, user, loading: authLoading } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,21 +34,25 @@ const Login: React.FC = () => {
 
   // 📋 Source of Truth: The URL
   const getRoleFromUrl = () => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(location.search);
     const r = params.get("role");
     return (r === 'PACIENTE' || r === 'CUIDADOR') ? r : 'CUIDADOR';
   };
 
   const role = getRoleFromUrl();
 
-  // 🛡️ EFECTO DE PROTECCIÓN: Si ya está logueado con el rol correcto, saltar login
+  // 🛡️ EFECTO DE PROTECCIÓN: Si ya está logueado, redirigir según su estado
   useEffect(() => {
     if (user && !authLoading) {
-      if (user.role === role) {
-        history.replace(role === "CUIDADOR" ? "/care/home" : "/patient/home");
+      if (user.role) {
+        // Si el usuario ya tiene rol, mandarlo a su Home
+        history.replace(user.role === "CUIDADOR" ? "/care/home" : "/patient/home");
+      } else {
+        // Si no tiene rol (ej. login social nuevo), mandarlo a elegir
+        history.replace("/select-role?role=" + role);
       }
     }
-  }, [user, role, history, authLoading]);
+  }, [user, history, authLoading]);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -59,38 +63,7 @@ const Login: React.FC = () => {
     setLoading(true);
     try {
       const response: any = await authLogin(email, password);
-      const loggedUser = response?.user ?? null;
-
-      if (!loggedUser) {
-        showModal('error', 'Error', 'El servidor no devolvió información del usuario.');
-        return;
-      }
-
-      if (!loggedUser.password) {
-        showModal('warning', 'Sin Contraseña', 'Esta cuenta usa Google. Debes crear una contraseña primero.');
-        history.push("/password");
-        return;
-      }
-
-      // 🟩 Usuario sin rol (primera vez)
-      if (!loggedUser.role) {
-        try {
-          const res = await api.post("/auth/set-role", { role: role });
-          if (res.data?.accessToken) {
-            localStorage.setItem("token", res.data.accessToken);
-            window.location.href = role === 'CUIDADOR' ? "/care/home" : "/patient/home";
-            return;
-          }
-        } catch (err) {
-          console.error("Error auto-asignando rol:", err);
-        }
-        history.push("/selectrole");
-        return;
-      }
-
-      // Redirección normal según rol ya asignado
-      history.push(loggedUser.role === "CUIDADOR" ? "/care/home" : "/patient/home");
-
+      // El useEffect se encargará de la redirección al actualizarse el 'user'
     } catch (err: any) {
       const msg = err?.response?.data?.message || "Error al iniciar sesión";
       showModal('error', 'Fallo de acceso', msg === 'Unauthorized' ? 'Credenciales incorrectas' : msg);
@@ -164,16 +137,24 @@ const Login: React.FC = () => {
           <div className="socials">
             <FcGoogle
               className="social-icon google"
-              onClick={() => {
-                const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-                window.location.href = `${baseUrl}/auth/google?role=${role}`;
+              onClick={async () => {
+                try {
+                  await loginWithGoogle();
+                } catch (err) {
+                  console.error("Firebase Google Error:", err);
+                  showModal('error', 'Error', 'No se pudo iniciar sesión con Google.');
+                }
               }}
             />
             <FaFacebook
               className="social-icon facebook"
-              onClick={() => {
-                const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-                window.location.href = `${baseUrl}/auth/facebook?role=${role}`;
+              onClick={async () => {
+                try {
+                  await loginWithFacebook();
+                } catch (err) {
+                  console.error("Firebase Facebook Error:", err);
+                  showModal('error', 'Error', 'No se pudo iniciar sesión con Facebook.');
+                }
               }}
             />
             <FaSquareXTwitter className="social-icon twitter" />

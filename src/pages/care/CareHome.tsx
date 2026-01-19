@@ -25,20 +25,27 @@ const CareHome: React.FC = () => {
   const [recentLogs, setRecentLogs] = useState<any[]>([]);
 
   useEffect(() => {
-    // Solo actuar si auth ya terminó de cargar
+    // 1. Si está cargando auth, esperamos
     if (authLoading) return;
 
-    if (!user) {
+    // 2. Si no hay usuario y no hay token guardado, al login
+    if (!user && !localStorage.getItem("token")) {
       history.replace("/login");
       return;
     }
 
-    // 🛡️ SEGURIDAD: Si un paciente entra aquí por error, mandarlo a su sitio
-    if (user.role === 'PACIENTE') {
-      history.replace("/patient/home");
-      return;
+    // 3. Si hay usuario, validar rol y cargar datos
+    if (user) {
+      if (user.role === 'PACIENTE') {
+        history.replace("/patient/home");
+        return;
+      }
+
+      // Si es cuidador, cargamos los datos del sistema
+      if (user.role === 'CUIDADOR') {
+        loadData();
+      }
     }
-    loadData();
   }, [user, authLoading]);
 
   const loadData = async () => {

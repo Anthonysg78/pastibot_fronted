@@ -7,6 +7,7 @@ import {
 } from "ionicons/icons";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../api/axios";
+import StatusModal from "../../components/StatusModal";
 import "./PatientPage.css";
 
 interface PatientData {
@@ -24,6 +25,7 @@ interface PatientData {
     photoUrl?: string;
     gender?: string;
     bio?: string;
+    phone?: string;
   };
 }
 
@@ -35,6 +37,19 @@ const PatientProfile: React.FC = () => {
   const [editing, setEditing] = useState(false);
   const [tempBio, setTempBio] = useState(user?.bio || "");
   const [saving, setSaving] = useState(false);
+
+  // Status Modal State
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{ type: 'success' | 'error' | 'warning', title: string, message: string }>({
+    type: 'success',
+    title: '',
+    message: ''
+  });
+
+  const showStatus = (type: 'success' | 'error' | 'warning', title: string, message: string) => {
+    setModalConfig({ type, title, message });
+    setModalOpen(true);
+  };
 
   // Clinical Edit State
   const [editingClinical, setEditingClinical] = useState(false);
@@ -75,7 +90,7 @@ const PatientProfile: React.FC = () => {
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      alert("La imagen es muy pesada (máx 2MB)");
+      showStatus('warning', 'Imagen pesada', 'La imagen no puede exceder los 2MB.');
       return;
     }
 
@@ -86,10 +101,10 @@ const PatientProfile: React.FC = () => {
       try {
         await api.patch("/users/profile", { photoUrl: base64 });
         if (getProfile) getProfile();
-        alert("¡Foto actualizada!");
+        showStatus('success', '¡Foto Actualizada!', 'Tu foto de perfil se ha actualizado con éxito.');
       } catch (err) {
         console.error("Error subiendo foto:", err);
-        alert("No se pudo subir la foto");
+        showStatus('error', 'Error', 'No se pudo actualizar la foto.');
       } finally {
         setUploading(false);
       }
@@ -103,9 +118,10 @@ const PatientProfile: React.FC = () => {
       await api.patch("/users/profile", { bio: tempBio });
       if (getProfile) getProfile();
       setEditing(false);
+      showStatus('success', '¡Perfil Actualizado!', 'Tu biografía ha sido guardada.');
     } catch (err) {
       console.error("Error guardando bio:", err);
-      alert("Error al guardar");
+      showStatus('error', 'Error', 'No se pudo guardar la biografía.');
     } finally {
       setSaving(false);
     }
@@ -124,10 +140,10 @@ const PatientProfile: React.FC = () => {
       await loadPatientData();
       if (getProfile) getProfile();
       setEditingClinical(false);
-      alert("Perfil clínico actualizado");
+      showStatus('success', '¡Éxito!', 'Perfil clínico actualizado correctamente.');
     } catch (err) {
       console.error("Error guardando datos clínicos:", err);
-      alert("Error al guardar");
+      showStatus('error', 'Error', 'No se pudieron guardar los datos clínicos.');
     } finally {
       setSaving(false);
     }
@@ -135,15 +151,22 @@ const PatientProfile: React.FC = () => {
 
   const handleWhatsapp = () => {
     if (patientData?.caregiver) {
-      const message = encodeURIComponent(`Hola ${patientData.caregiver.name}, soy ${user?.name} 👋`);
-      window.open(`https://wa.me/?text=${message}`, "_blank");
+      if (!patientData.caregiver.phone) {
+        showStatus('warning', 'Sin Teléfono', 'Tu cuidador aún no ha registrado su número de WhatsApp.');
+        return;
+      }
+
+      // Limpiar número (quitar espacios, guiones, etc)
+      const cleanPhone = patientData.caregiver.phone.replace(/\D/g, '');
+      const message = encodeURIComponent(`Hola ${patientData.caregiver.name}, soy ${user?.name} 👋. Necesito ayuda.`);
+      window.open(`https://wa.me/${cleanPhone}?text=${message}`, "_blank");
     }
   };
 
   const handleLogout = () => {
-    if (confirm("¿Estás seguro que deseas cerrar sesión?")) {
+    if (window.confirm("¿Estás seguro que deseas cerrar sesión?")) {
       logout();
-      window.location.href = "/login";
+      showStatus('success', 'Sesión Cerrada', 'Has salido de Pastibot correctamente.');
     }
   };
 
@@ -355,6 +378,16 @@ const PatientProfile: React.FC = () => {
                       <span className="detail-val">{patientData.caregiver.email}</span>
                     </div>
                   </div>
+
+                  {patientData.caregiver.phone && (
+                    <div className="detail-item">
+                      <IonIcon icon={call} />
+                      <div className="detail-text">
+                        <span className="detail-lbl">WhatsApp / Tel</span>
+                        <span className="detail-val">{patientData.caregiver.phone}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <button className="whatsapp-btn-pro" onClick={handleWhatsapp}>
@@ -376,6 +409,19 @@ const PatientProfile: React.FC = () => {
             Cerrar Sesión Segura
           </button>
         </div>
+
+        <StatusModal
+          isOpen={modalOpen}
+          type={modalConfig.type}
+          title={modalConfig.title}
+          message={modalConfig.message}
+          onClose={() => {
+            setModalOpen(false);
+            if (modalConfig.type === 'success' && modalConfig.title === 'Sesión Cerrada') {
+              window.location.href = "/welcome";
+            }
+          }}
+        />
       </IonContent>
     </IonPage>
   );

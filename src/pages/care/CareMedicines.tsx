@@ -40,11 +40,11 @@ import {
   closeOutline,
   add
 } from "ionicons/icons";
-import "./CarePage.css";
-import { IoQrCodeOutline } from "react-icons/io5";
 import { api } from "../../api/axios";
 import { useParams } from "react-router";
 import { useAuth } from "../../context/AuthContext";
+import StatusModal from "../../components/StatusModal";
+import "./CarePage.css";
 
 const DAYS = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do"];
 const ICONS = [
@@ -100,6 +100,19 @@ const CareMedicines: React.FC = () => {
   const [scheduleMode, setScheduleMode] = useState<'frequency' | 'manual'>('frequency');
   const [selectedInterval, setSelectedInterval] = useState<number | null>(8);
 
+  // Status Modal State
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{ type: 'success' | 'error' | 'warning', title: string, message: string }>({
+    type: 'success',
+    title: '',
+    message: ''
+  });
+
+  const showStatus = (type: 'success' | 'error' | 'warning', title: string, message: string) => {
+    setModalConfig({ type, title, message });
+    setModalOpen(true);
+  };
+
   useEffect(() => {
     if (scheduleMode === 'frequency' && selectedInterval) {
       const newTimes = [];
@@ -122,18 +135,21 @@ const CareMedicines: React.FC = () => {
   }, [routePatientId]);
 
   useEffect(() => {
-    if (!token || !activePatientId) {
-      if (!activePatientId) loadPatients(); // Si no hay paciente, cargar lista para elegir
-      return;
+    // Si no hay token, no intentar nada hasta que AuthContext lo proporcione
+    if (!localStorage.getItem("token")) return;
+
+    if (!activePatientId) {
+      loadPatients();
+    } else {
+      loadMeds(activePatientId);
     }
-    loadMeds(activePatientId);
-  }, [activePatientId, token]);
+  }, [activePatientId]);
 
   const loadPatients = async () => {
     try {
       const res = await api.get("/patients");
       setPatients(res.data);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error cargando pacientes:", err);
     }
   };
@@ -141,7 +157,14 @@ const CareMedicines: React.FC = () => {
   const loadMeds = (id: string | number) => {
     api.get(`/patients/${id}/medicines`)
       .then(res => setMeds(res.data))
-      .catch(err => console.error("Error cargando medicinas:", err));
+      .catch(err => {
+        console.error("Error cargando medicinas:", err);
+        // Si el paciente no se encuentra o no pertenece al cuidador, limpiar
+        if (err.response?.status === 404 || err.response?.status === 403) {
+          setActivePatientId(null);
+          localStorage.removeItem("activePatientId");
+        }
+      });
   };
 
   const toggleDay = (d: string) => {
@@ -170,11 +193,11 @@ const CareMedicines: React.FC = () => {
 
   const saveMed = async () => {
     if (!manualName.trim()) {
-      alert("El nombre del medicamento es obligatorio.");
+      showStatus('warning', 'Falta información', 'El nombre del medicamento es obligatorio.');
       return;
     }
     if (!activePatientId) {
-      alert("Error: No hay un paciente seleccionado.");
+      showStatus('error', 'Error', 'No hay un paciente seleccionado.');
       return;
     }
 
@@ -203,12 +226,10 @@ const CareMedicines: React.FC = () => {
       }
       setOpen(false);
       resetForm();
+      showStatus('success', '¡Guardado!', editingMedId ? 'Medicina actualizada.' : 'Nueva medicina añadida correctamente.');
     } catch (err: any) {
       console.error("Error guardando medicina:", err);
-      if (err.response?.data) {
-        console.error("Detalle del error:", err.response.data);
-      }
-      alert("Error al guardar medicina");
+      showStatus('error', 'Error', 'No se pudo guardar la medicina.');
     }
   };
 
@@ -241,9 +262,10 @@ const CareMedicines: React.FC = () => {
     try {
       await api.delete(`/patients/${activePatientId}/medicines/${id}`);
       setMeds(meds.filter(m => m.id !== id));
+      showStatus('success', 'Eliminado', 'El medicamento ha sido borrado.');
     } catch (err) {
       console.error("Error eliminando medicina:", err);
-      alert("No se pudo eliminar la medicina");
+      showStatus('error', 'Error', 'No se pudo eliminar el medicamento.');
     }
   };
 
@@ -331,13 +353,13 @@ const CareMedicines: React.FC = () => {
             </div>
           )}
 
-          <IonButton className="qr-btn" onClick={() => alert("Próximamente: Escaneo QR")}>
+          <IonButton className="qr-btn" onClick={() => showStatus('warning', 'Próximamente', 'El escaneo de recetas por QR estará disponible muy pronto.')}>
             <IonIcon icon={qrCodeOutline} style={{ fontSize: "1.3rem" }} />
           </IonButton>
 
           <button className="care-btn shadow-premium" onClick={() => {
             if (!activePatientId) {
-              alert("Por favor, selecciona un paciente primero.");
+              showStatus('warning', 'Selecciona un Paciente', 'Debes elegir un paciente de la lista antes de añadir medicinas.');
               return;
             }
             setOpen(true);
@@ -966,6 +988,13 @@ const CareMedicines: React.FC = () => {
           </div>
         </IonModal>
 
+        <StatusModal
+          isOpen={modalOpen}
+          type={modalConfig.type}
+          title={modalConfig.title}
+          message={modalConfig.message}
+          onClose={() => setModalOpen(false)}
+        />
       </IonContent>
     </IonPage>
   );

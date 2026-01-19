@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { IonContent, IonSpinner, IonIcon, IonPage } from "@ionic/react";
 import { happy, sad, fitness } from "ionicons/icons";
+import { useHistory } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../api/axios";
 import "./PatientPage.css";
@@ -37,6 +38,7 @@ interface HistoryItem {
 }
 
 const PatientHome: React.FC = () => {
+  const history = useHistory();
   const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [reminders, setReminders] = useState<Reminder[]>([]);
@@ -108,7 +110,7 @@ const PatientHome: React.FC = () => {
   };
 
   const nextReminder = reminders[0];
-  const completedToday = todayHistory.filter(h => h.status === "TAKEN" || h.status === "DISPENSED").length;
+  const completedToday = todayHistory.filter((h: HistoryItem) => h.status === "TAKEN" || h.status === "DISPENSED").length;
   const totalToday = reminders.length + completedToday;
 
   const getGreeting = () => {
@@ -232,9 +234,31 @@ const PatientHome: React.FC = () => {
         <div className="patient-bubble b2"></div>
 
         <div className="patient-container fade-in">
-          <header className="patient-header">
-            <h1 className="patient-title">{getGreeting()}, {user?.name?.split(" ")[0]}</h1>
-            <p className="patient-subtitle">Hoy llevas {completedToday} de {totalToday} tomas</p>
+          <header className="patient-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+            <div>
+              <h1 className="patient-title" style={{ margin: 0 }}>{getGreeting()}, {user?.name?.split(" ")[0]} 👋</h1>
+              <p className="patient-subtitle" style={{ margin: 0 }}>Hoy llevas {completedToday} de {totalToday} tomas</p>
+            </div>
+
+            <div
+              onClick={() => history.push("/patient/profile")}
+              style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '16px',
+                overflow: 'hidden',
+                border: '2px solid white',
+                boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+                cursor: 'pointer',
+                flexShrink: 0
+              }}
+            >
+              <img
+                src={user?.photoUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name}`}
+                alt="Perfil"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            </div>
           </header>
 
           {/* 📊 ESTADÍSTICAS DEL DÍA */}
@@ -301,7 +325,7 @@ const PatientHome: React.FC = () => {
           {reminders.length > 1 && (
             <div className="upcoming-section">
               <h3 className="section-title">Próximas medicinas</h3>
-              {reminders.slice(1, 4).map((reminder, idx) => (
+              {reminders.slice(1, 4).map((reminder: Reminder) => (
                 <div key={reminder.id} className="upcoming-card">
                   <div className="upcoming-time">{reminder.time}</div>
                   <div className="upcoming-info">
@@ -320,7 +344,7 @@ const PatientHome: React.FC = () => {
           {todayHistory.length > 0 && (
             <div className="history-section">
               <h3 className="section-title">Historial de hoy</h3>
-              {todayHistory.slice(0, 5).map((item) => (
+              {todayHistory.slice(0, 5).map((item: HistoryItem) => (
                 <div key={item.id} className="history-item">
                   <div className={`history-status ${item.status.toLowerCase()}`}>
                     {item.status === 'TAKEN' ? '✓' : item.status === 'DISPENSED' ? '⏳' : '✗'}

@@ -69,22 +69,27 @@ const CarePatients: React.FC = () => {
 
   // Fallback useEffect al montar
   useEffect(() => {
-    // Solo actuar si auth ya terminó de cargar
+    // 1. Si está cargando auth, esperamos
     if (authLoading) return;
 
-    if (!user) {
+    // 2. Si definitivamente no hay usuario ni token, al login
+    if (!user && !localStorage.getItem("token")) {
       history.replace("/login");
       return;
     }
 
-    // 🛡️ SEGURIDAD: Solo cuidadores
-    if (user.role === 'PACIENTE') {
-      history.replace("/patient/home");
-      return;
-    }
+    // 3. Si hay usuario, validar rol
+    if (user) {
+      if (user.role === 'PACIENTE') {
+        history.replace("/patient/home");
+        return;
+      }
 
-    loadPatients();
-    getProfile(); // Asegurar datos frescos del cuidador
+      // Si llegamos aquí, es CUIDADOR o el perfil aún no tiene rol (raro)
+      if (user.role === 'CUIDADOR') {
+        loadPatients();
+      }
+    }
   }, [user, authLoading]);
 
   // 🚀 REFRESCAR AUTOMÁTICAMENTE AL ENTRAR A LA PESTAÑA
@@ -103,11 +108,9 @@ const CarePatients: React.FC = () => {
       } else {
         setPatients([]);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("❌ Error cargando pacientes:", err);
-      if (err.response?.status !== 401) {
-        showModal('error', 'Error de Conexión', 'No se pudieron cargar los pacientes. Revisa tu internet.');
-      }
+      // No mostramos modal de error aquí para no ser molestos en cada carga
     } finally {
       setLoading(false);
     }

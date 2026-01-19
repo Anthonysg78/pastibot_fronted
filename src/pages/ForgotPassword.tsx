@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { IonPage, IonContent, IonSpinner, IonInput, IonButton } from "@ionic/react";
 import { useHistory } from "react-router-dom";
 import { api } from "../api/axios";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "../firebase/config";
 import StatusModal from "../components/StatusModal";
 import "./ForgotPassword.css";
 
@@ -32,10 +34,11 @@ const ForgotPassword: React.FC = () => {
 
     setLoading(true);
     try {
-      const res = await api.post("/auth/forgot-password", { email });
-      showModal('success', 'Correo Enviado', 'Si el correo existe, recibirás un enlace para restablecer tu contraseña en unos minutos.');
+      await sendPasswordResetEmail(auth, email);
+      showModal('success', 'Correo Enviado', 'Te hemos enviado un enlace para restablecer tu contraseña. Revisa tu bandeja de entrada o spam.');
     } catch (err: any) {
-      showModal('error', 'Error', err.response?.data?.message || "No pudimos procesar tu solicitud.");
+      console.error("Firebase Reset Error:", err);
+      showModal('error', 'Error', "No pudimos enviar el correo de recuperación. Verifica que el email sea correcto.");
     } finally {
       setLoading(false);
     }

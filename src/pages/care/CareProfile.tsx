@@ -14,6 +14,7 @@ import {
 } from "ionicons/icons";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../api/axios";
+import StatusModal from "../../components/StatusModal";
 import "./CarePage.css";
 
 const CareProfile: React.FC = () => {
@@ -22,9 +23,24 @@ const CareProfile: React.FC = () => {
   const [bio, setBio] = useState(user?.bio || "Dedicado al cuidado y bienestar de mis pacientes. Siempre buscando la mejor tecnología para ayudar.");
   const [editing, setEditing] = useState(false);
   const [tempBio, setTempBio] = useState(user?.bio || "");
+  const [phone, setPhone] = useState(user?.phone || "");
+  const [tempPhone, setTempPhone] = useState(user?.phone || "");
   const [gender, setGender] = useState(user?.gender || "No definido");
   const [showOptions, setShowOptions] = useState(false);
   const [uploading, setUploading] = useState(false);
+
+  // Status Modal State
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{ type: 'success' | 'error' | 'warning', title: string, message: string }>({
+    type: 'success',
+    title: '',
+    message: ''
+  });
+
+  const showStatus = (type: 'success' | 'error' | 'warning', title: string, message: string) => {
+    setModalConfig({ type, title, message });
+    setModalOpen(true);
+  };
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -35,6 +51,10 @@ const CareProfile: React.FC = () => {
       if (user.bio) {
         setBio(user.bio);
         setTempBio(user.bio);
+      }
+      if (user.phone) {
+        setPhone(user.phone);
+        setTempPhone(user.phone);
       }
       if (user.gender) setGender(user.gender);
     }
@@ -49,7 +69,7 @@ const CareProfile: React.FC = () => {
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      alert("La imagen es muy pesada (máx 2MB)");
+      showStatus('warning', 'Imagen pesada', 'La imagen no puede exceder los 2MB.');
       return;
     }
 
@@ -78,13 +98,15 @@ const CareProfile: React.FC = () => {
     }
 
     try {
-      await api.patch("/users/profile", { bio: tempBio });
+      await api.patch("/users/profile", { bio: tempBio, phone: tempPhone });
       setBio(tempBio);
+      setPhone(tempPhone);
       setEditing(false);
       if (getProfile) getProfile();
+      showStatus('success', '¡Perfil Actualizado!', 'Tus cambios se han guardado correctamente.');
     } catch (err) {
       console.error("Error guardando perfil:", err);
-      alert("Error al guardar cambios");
+      showStatus('error', 'Error', 'No se pudieron guardar los cambios.');
     }
   };
 
@@ -202,7 +224,12 @@ const CareProfile: React.FC = () => {
                   <IonIcon icon={chevronForwardOutline} className="action-arrow" />
                 </div>
 
-                <div className="action-item" onClick={() => alert("Cerrar sesión (simulado)")}>
+                <div className="action-item" onClick={() => {
+                  if (window.confirm("¿Estás seguro que deseas cerrar sesión?")) {
+                    logout();
+                    showStatus('success', 'Sesión Cerrada', 'Has salido de Pastibot correctamente.');
+                  }
+                }}>
                   <div className="action-icon" style={{ background: 'rgba(229, 57, 53, 0.1)', color: '#e53935' }}>
                     <IonIcon icon={logOutOutline} />
                   </div>
@@ -258,6 +285,26 @@ const CareProfile: React.FC = () => {
                   }}
                 />
 
+                <div className="form-group" style={{ marginBottom: '20px' }}>
+                  <label className="input-label">Número de WhatsApp (con código de país)</label>
+                  <input
+                    type="tel"
+                    className="care-input"
+                    placeholder="Ej: +593987654321"
+                    value={tempPhone}
+                    onChange={(e) => setTempPhone(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '14px',
+                      borderRadius: '16px',
+                      border: '1px solid rgba(0,0,0,0.1)',
+                      background: '#f8fafc',
+                      fontSize: '0.95rem',
+                      color: 'var(--text)'
+                    }}
+                  />
+                </div>
+
                 <div className="form-group">
                   <label className="input-label">Género (No editable)</label>
                   <div
@@ -286,6 +333,18 @@ const CareProfile: React.FC = () => {
             </div>
           )}
         </div>
+        <StatusModal
+          isOpen={modalOpen}
+          type={modalConfig.type}
+          title={modalConfig.title}
+          message={modalConfig.message}
+          onClose={() => {
+            setModalOpen(false);
+            if (modalConfig.type === 'success' && modalConfig.title === 'Sesión Cerrada') {
+              window.location.href = "/welcome";
+            }
+          }}
+        />
       </IonContent>
     </IonPage>
   );

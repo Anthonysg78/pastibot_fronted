@@ -12,7 +12,7 @@ import "./Register.css";
 const Register: React.FC = () => {
   const history = useHistory();
   const location = useLocation();
-  const { user, register: authRegister, loading: authLoading } = useAuth();
+  const { user, register: authRegister, loginWithGoogle, loginWithFacebook, loading: authLoading } = useAuth();
 
   const queryParams = new URLSearchParams(location.search);
   const role = queryParams.get("role") || "PACIENTE"; // CUIDADOR o PACIENTE
@@ -40,7 +40,11 @@ const Register: React.FC = () => {
   // 🛡️ Si ya hay sesión, no registrarse otra vez
   useEffect(() => {
     if (user && !authLoading) {
-      history.replace(user.role === "CUIDADOR" ? "/care/home" : "/patient/home");
+      if (user.role) {
+        history.replace(user.role === "CUIDADOR" ? "/care/home" : "/patient/home");
+      } else {
+        history.replace("/select-role?role=" + role);
+      }
     }
   }, [user, history, authLoading]);
 
@@ -190,16 +194,24 @@ const Register: React.FC = () => {
           <div className="socials">
             <FcGoogle
               className="social-icon google"
-              onClick={() => {
-                const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-                window.location.href = `${baseUrl}/auth/google?role=${role}`;
+              onClick={async () => {
+                try {
+                  await loginWithGoogle();
+                } catch (err) {
+                  console.error("Firebase Google Error:", err);
+                  showModal('error', 'Error', 'No se pudo registrar con Google.');
+                }
               }}
             />
             <FaFacebook
               className="social-icon facebook"
-              onClick={() => {
-                const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-                window.location.href = `${baseUrl}/auth/facebook?role=${role}`;
+              onClick={async () => {
+                try {
+                  await loginWithFacebook();
+                } catch (err) {
+                  console.error("Firebase Facebook Error:", err);
+                  showModal('error', 'Error', 'No se pudo registrar con Facebook.');
+                }
               }}
             />
             <FaSquareXTwitter className="social-icon twitter" />

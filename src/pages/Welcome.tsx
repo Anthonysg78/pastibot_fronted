@@ -1,5 +1,5 @@
-import React from "react";
-import { useHistory } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useHistory, useLocation } from "react-router-dom";
 import { IonPage, IonContent } from "@ionic/react";
 import { FaUserNurse, FaUser } from "react-icons/fa";
 import "./SelectRole.css";
@@ -8,22 +8,23 @@ import { useAuth } from "../context/AuthContext";
 
 const Welcome: React.FC = () => {
     const history = useHistory();
+    const location = useLocation();
     const { user, logout } = useAuth();
 
-    const handleSelect = (role: string) => {
+    const handleSelect = (selectedRole: string) => {
         // 🔥 SI YA HAY SESIÓN Y EL ROL NO COINCIDE, CERRAR SESIÓN PARA EVITAR CONFUSIÓN
         if (user) {
-            if (user.role !== role) {
-                logout(); // Borrar sesión del cuidador si entra como paciente (o viceversa)
-                history.push(`/login?role=${role}`);
+            if (user.role !== selectedRole) {
+                logout();
+                history.push(`/login?role=${selectedRole}`);
                 return;
             }
             // Si el rol coincide, ir directo a su home
-            history.push(role === 'CUIDADOR' ? "/care/home" : "/patient/home");
+            history.push(selectedRole === 'CUIDADOR' ? "/care/home" : "/patient/home");
             return;
         }
 
-        history.push(`/login?role=${role}`);
+        history.push(`/login?role=${selectedRole}`);
     };
 
     return (
