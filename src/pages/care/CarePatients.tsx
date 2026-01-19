@@ -54,13 +54,20 @@ const CarePatients: React.FC = () => {
 
   // Fallback useEffect al montar
   useEffect(() => {
+    // 🛡️ SEGURIDAD: Solo cuidadores
+    if (user && user.role === 'PACIENTE') {
+      window.location.href = "/patient/home";
+      return;
+    }
     loadPatients();
     getProfile(); // Asegurar datos frescos del cuidador
-  }, []);
+  }, [user]);
 
   // 🚀 REFRESCAR AUTOMÁTICAMENTE AL ENTRAR A LA PESTAÑA
   useIonViewWillEnter(() => {
-    loadPatients();
+    if (user?.role === 'CUIDADOR') {
+      loadPatients();
+    }
   });
 
   const loadPatients = async () => {
@@ -68,10 +75,13 @@ const CarePatients: React.FC = () => {
     try {
       const res = await api.get("/patients");
       console.log("📦 Pacientes recibidos del backend:", res.data);
-      setPatients(res.data);
+      if (Array.isArray(res.data)) {
+        setPatients(res.data);
+      } else {
+        setPatients([]);
+      }
     } catch (err) {
       console.error("❌ Error cargando pacientes:", err);
-      alert("Error al cargar pacientes. Verifica la consola.");
     } finally {
       setLoading(false);
     }
@@ -212,7 +222,7 @@ const CarePatients: React.FC = () => {
             </div>
           ) : (
             <div className="patients-grid" style={{ display: 'grid', gap: '15px' }}>
-              {patients.map((p) => (
+              {Array.isArray(patients) && patients.map((p) => (
                 <div
                   className="care-card fade-in"
                   key={p.id}
