@@ -1,0 +1,215 @@
+.register-page {
+  --background: #ffffff;
+  font-family: "Segoe UI", sans-serif;
+  height: 100%;
+}
+
+/* Layout flexbox para el contenido scrolleable */
+.register-page::part(scroll) {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100%;
+  padding-bottom: 20px;
+}
+
+/* Contenedor */
+.register-container {
+  position: relative;
+  width: 85%;
+  max-width: 400px;
+  text-align: center;
+  z-index: 10;
+}
+
+/* Títulos */
+.title {
+  font-size: 2.3rem;
+  color: #0288d1;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  color: #777;
+  margin-bottom: 25px;
+}
+
+/* Inputs */
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.register-form input {
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: #f3f3f3;
+  font-size: 1rem;
+  outline: none;
+  caret-color: #0288d1;
+
+}
+
+/* Botón principal */
+.register-btn {
+  background: linear-gradient(135deg, #4fc3f7, #0288d1);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.register-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Texto alternativo */
+.signin-text {
+  margin-top: 15px;
+  color: #555;
+}
+
+.link {
+  color: #0288d1;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Divisor */
+.divider {
+  margin: 20px 0 10px;
+  color: #777;
+  font-size: 0.9rem;
+}
+
+/* 🌐 Íconos sociales estilo Login */
+.socials {
+  margin-top: 15px;
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+}
+
+.socials svg {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  padding: 6px;
+  background-color: #e3f2fd;
+  color: #0288d1;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.socials svg:hover {
+  transform: scale(1.15);
+  background-color: #b3e5fc;
+}
+
+/* Colores específicos */
+.facebook {
+  color: #1877f2;
+}
+
+.twitter {
+  color: #1da1f2;
+}
+
+.google {
+  color: #db4437;
+}
+
+
+/* Formas decorativas fixed */
+.top-shape {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 150px;
+  background: linear-gradient(135deg, #4fc3f7, #0288d1);
+  border-bottom-left-radius: 50% 40%;
+  border-bottom-right-radius: 50% 40%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.bottom-shape {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 120px;
+  background: linear-gradient(135deg, #4fc3f7, #81d4fa);
+  border-top-left-radius: 50% 40%;
+  border-top-right-radius: 50% 40%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Responsive */
+@media (max-width: 400px) {
+  .register-container {
+    width: 90%;
+  }
+
+  .register-form input {
+    font-size: 0.95rem;
+  }
+
+  .icon {
+    font-size: 1.8rem;
+  }
+}
+
+.register-form input {
+  color: #000 !important;
+  /* ← texto negro */
+}
+
+.register-form input::placeholder {
+  color: #888 !important;
+  /* ← placeholder gris */
+}
+
+/* Thematic overrides for Patient */
+.patient-theme .title {
+  color: #F4511E;
+}
+
+.patient-theme .link {
+  color: #F4511E;
+}
+
+.patient-theme .register-btn {
+  background: linear-gradient(135deg, #FF7043, #F4511E);
+}
+
+.patient-theme .top-shape {
+  background: linear-gradient(135deg, #FF7043, #F4511E);
+}
+
+.patient-theme .bottom-shape {
+  background: linear-gradient(135deg, #FF7043, #FFAB91);
+}
+
+.patient-theme .socials svg {
+  background-color: #FFF3E0;
+  color: #F4511E;
+}
+
+.patient-theme .socials svg:hover {
+  background-color: #FFE0B2;
+}
+
+.patient-theme .register-form input {
+  caret-color: #F4511E;
+}

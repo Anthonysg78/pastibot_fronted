@@ -1,0 +1,59 @@
+
+.care-tabbar {
+  --background: #ffffff;
+  height: 88px;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: visible !important;
+  position: relative;
+  z-index: 10;
+}
+
+
+.care-tabbar ion-tab-button {
+  position: relative;
+  background: transparent;
+  transition: all 0.25s ease;
+  overflow: visible !important;
+}
+
+
+.care-tabbar ion-tab-button ion-icon {
+  font-size: 26px;
+  color: #666;
+  transition: all 0.25s ease;
+}
+
+
+.care-tabbar ion-tab-button ion-label {
+  font-size: 13px;
+  color: #666;
+  margin-top: 6px;
+  transition: all 0.25s ease;
+}
+
+
+.care-tabbar ion-tab-button.tab-selected ion-icon {
+  color: #0288d1;
+  transform: translateY(-8px);
+}
+
+.care-tabbar ion-tab-button.tab-selected ion-label {
+  color: #0288d1;
+  font-weight: 600;
+}
+
+
+.care-tabbar ion-tab-button.tab-selected {
+  transform: translateY(-4px);
+}
+
+
+.care-tabbar ion-tab-button::part(native) {
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}

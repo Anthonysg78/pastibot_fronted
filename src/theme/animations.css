@@ -1,0 +1,172 @@
+/* =========================================
+   🪄 ANIMACIONES PREMIUM & UTILIDADES
+   ========================================= */
+
+/* ⚡ OPTIMIZED ANIMATIONS - GPU ACCELERATED */
+
+/* Fade In Up - Optimized */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 20px, 0);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    will-change: transform, opacity;
+}
+
+/* Fade In - Optimized */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+    will-change: opacity;
+}
+
+/* Scale In - Optimized */
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale3d(0.9, 0.9, 1);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale3d(1, 1, 1);
+    }
+}
+
+.animate-scale-in {
+    animation: scaleIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    will-change: transform, opacity;
+}
+
+/* Float - Simplified for performance */
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0);
+    }
+
+    50% {
+        transform: translate3d(0, -10px, 0);
+    }
+}
+
+.animate-float {
+    animation: float 3s ease-in-out infinite;
+    will-change: transform;
+}
+
+/* Pulse Glow - Reduced complexity */
+@keyframes pulseGlow {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.animate-pulse-glow {
+    animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* ✨ UTILITY CLASSES - OPTIMIZED */
+
+/* Gradient Text */
+.text-gradient {
+    background: linear-gradient(135deg, #0288d1 0%, #29b6f6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Glass Card - Simplified */
+.glass-card {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 16px rgba(31, 38, 135, 0.1);
+    border-radius: 20px;
+}
+
+/* Mesh Background - Simplified */
+.bg-mesh {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f5f5f5 50%, #fff3e0 100%);
+    position: relative;
+}
+
+/* Premium Shadows */
+.shadow-soft {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.shadow-hover {
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.shadow-hover:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+/* Premium Button */
+.btn-premium {
+    background: linear-gradient(135deg, #29b6f6 0%, #0277bd 100%);
+    color: white;
+    border: none;
+    border-radius: 16px;
+    padding: 12px 24px;
+    font-weight: 700;
+    box-shadow: 0 6px 20px rgba(2, 136, 209, 0.3);
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.btn-premium:hover {
+    box-shadow: 0 8px 28px rgba(2, 136, 209, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-premium:active {
+    transform: translateY(0);
+}
+
+/* ⚡ PERFORMANCE OPTIMIZATIONS */
+* {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Reduce motion for accessibility and performance */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
