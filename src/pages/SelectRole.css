@@ -1,0 +1,273 @@
+.selectrole-page {
+  --background: #ffffff;
+  font-family: "Segoe UI", sans-serif;
+  height: 100%;
+}
+
+.selectrole-page::part(scroll) {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100%;
+  padding-bottom: 30px;
+}
+
+/* Contenedor central */
+.role-container {
+  position: relative;
+  width: 85%;
+  max-width: 400px;
+  text-align: center;
+  z-index: 10;
+}
+
+/* Títulos */
+.title {
+  font-size: 2.3rem;
+  color: #0288d1;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  color: #777;
+  margin-bottom: 25px;
+}
+
+/* Tarjetas de rol */
+.role-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.role-card {
+  background: linear-gradient(135deg, #4fc3f7, #0288d1);
+  color: white;
+  border-radius: 24px;
+  padding: 30px 15px;
+  box-shadow: 0 10px 25px rgba(2, 136, 209, 0.15);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.role-card:hover {
+  transform: translateY(-8px) scale(1.03);
+  box-shadow: 0 15px 35px rgba(2, 136, 209, 0.3);
+}
+
+.role-card h2 {
+  margin-top: 15px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.role-card p {
+  opacity: 0.9;
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+.role-icon {
+  font-size: 4rem;
+  color: white;
+}
+
+/* Fondos decorativos */
+.top-gradient {
+  position: fixed;
+  top: -80px;
+  left: -10%;
+  width: 120%;
+  height: 220px;
+  background: linear-gradient(135deg, #4fc3f7, #0288d1);
+  border-bottom-left-radius: 50% 40%;
+  border-bottom-right-radius: 50% 40%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.bottom-gradient {
+  position: fixed;
+  bottom: -80px;
+  left: -10%;
+  width: 120%;
+  height: 200px;
+  background: linear-gradient(135deg, #4fc3f7, #81d4fa);
+  border-top-left-radius: 50% 40%;
+  border-top-right-radius: 50% 40%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/*  Modal Pastibot (centrado y limpio) */
+.confirm-modal::part(backdrop) {
+  background: rgba(0, 0, 0, 0.45);
+  /* Oscurecido sutil */
+}
+
+.confirm-modal::part(content) {
+  background: transparent !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/*  Caja principal del modal */
+.modal-content {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 25px 20px 30px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(2, 136, 209, 0.25);
+  animation: bounceIn 0.4s ease both;
+  width: 90%;
+  max-width: 350px;
+  font-family: "Segoe UI", sans-serif;
+  margin: auto;
+}
+
+/*  Título y texto */
+.modal-content h2 {
+  color: #0288d1;
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+
+.modal-content p {
+  color: #555;
+  font-size: 1rem;
+  margin-bottom: 25px;
+}
+
+/* Botones */
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.btn-cancel,
+.btn-confirm {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 22px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-family: "Segoe UI", sans-serif;
+}
+
+/* Botón cancelar */
+.btn-cancel {
+  background: #f2f2f2;
+  color: #333;
+}
+
+.btn-cancel:hover {
+  background: #e0e0e0;
+}
+
+/* Botón confirmar */
+.btn-confirm {
+  background: linear-gradient(135deg, #4fc3f7, #0288d1);
+  color: white;
+  box-shadow: 0 4px 10px rgba(2, 136, 209, 0.3);
+}
+
+.btn-confirm:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 14px rgba(2, 136, 209, 0.4);
+}
+
+/*  Animación rebote suave */
+@keyframes bounceIn {
+  0% {
+    transform: scale(0.9) translateY(25px);
+    opacity: 0;
+  }
+
+  60% {
+    transform: scale(1.03) translateY(-6px);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Eliminar recuadro blanco detrás del modal */
+.confirm-modal ion-content {
+  --background: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Evitar que el contenedor cree capas adicionales */
+.confirm-modal::part(content) {
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+/* Asegurar que el modal solo muestre la caja principal */
+ion-modal::part(backdrop) {
+  backdrop-filter: blur(2px);
+}
+
+
+/* Burbujas flotantes */
+.role-bubble {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(79, 195, 247, 0.2), rgba(2, 136, 209, 0.05));
+  filter: blur(2px);
+  z-index: 1;
+  animation: floatAnim 15s infinite ease-in-out;
+}
+
+@keyframes floatAnim {
+
+  0%,
+  100% {
+    transform: translateY(0) translateX(0);
+  }
+
+  50% {
+    transform: translateY(-40px) translateX(20px);
+  }
+}
+
+@keyframes floatAnimReverse {
+
+  0%,
+  100% {
+    transform: translateY(0) translateX(0);
+  }
+
+  50% {
+    transform: translateY(40px) translateX(-20px);
+  }
+}
+
+/* Responsive */
+@media (max-width: 400px) {
+  .role-container {
+    width: 90%;
+  }
+
+  .role-card {
+    padding: 25px 15px;
+  }
+
+  .role-icon {
+    font-size: 3.5rem;
+  }
+}

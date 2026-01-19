@@ -1,0 +1,345 @@
+/* 🎨 FONDO GENERAL CON MESH GRADIENT */
+.login-page {
+  --background: linear-gradient(135deg, #e3f2fd 0%, #f5f5f5 50%, #fff3e0 100%) !important;
+  font-family: "Segoe UI", "Inter", sans-serif;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-page::before {
+  content: '';
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 20% 50%, rgba(79, 195, 247, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(255, 112, 67, 0.1) 0%, transparent 50%);
+  animation: meshMove 20s ease-in-out infinite;
+  z-index: 0;
+}
+
+@keyframes meshMove {
+
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(-5%, -5%);
+  }
+}
+
+/* CONFIGURAR SCROLL */
+.login-page::part(scroll) {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100%;
+  padding: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+/* 📦 CONTENEDOR PRINCIPAL CON GLASSMORPHISM */
+.login-container {
+  position: relative;
+  width: 90%;
+  max-width: 420px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 32px;
+  padding: 40px 30px;
+  box-shadow: 0 20px 60px rgba(2, 136, 209, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+  z-index: 10;
+  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 🎯 TÍTULO CON GRADIENTE */
+.title {
+  font-size: 3.2rem;
+  background: linear-gradient(135deg, #0288d1 0%, #29b6f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+  font-weight: 900;
+  letter-spacing: -1px;
+}
+
+.subtitle {
+  color: #546e7a;
+  margin-bottom: 30px;
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+
+/* 📝 CAMPOS DE ENTRADA PREMIUM */
+.input {
+  --background: rgba(255, 255, 255, 0.95);
+  --padding-start: 18px;
+  --padding-end: 18px;
+  border-radius: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(2, 136, 209, 0.08);
+  color: #263238;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.input:focus-within {
+  box-shadow: 0 8px 24px rgba(2, 136, 209, 0.15);
+  border-color: #29b6f6;
+  transform: translateY(-2px);
+}
+
+/* 🔗 ENLACE DE OLVIDO */
+.forgot {
+  display: block;
+  font-size: 0.95rem;
+  color: #0288d1;
+  margin-bottom: 24px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.forgot:hover {
+  color: #01579b;
+}
+
+/* 🚀 BOTÓN PRINCIPAL CON ANIMACIÓN */
+.signin-btn {
+  --background: linear-gradient(135deg, #29b6f6 0%, #0277bd 100%);
+  --color: white;
+  --box-shadow: 0 10px 30px rgba(2, 136, 209, 0.35);
+  border-radius: 16px;
+  font-weight: 700;
+  height: 52px;
+  margin-bottom: 24px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.signin-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.signin-btn:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+.signin-btn:hover {
+  --box-shadow: 0 15px 40px rgba(2, 136, 209, 0.45);
+  transform: translateY(-2px);
+}
+
+/* 📝 ENLACE DE CREAR CUENTA */
+.create {
+  font-size: 0.95rem;
+  color: #546e7a;
+  margin-bottom: 20px;
+}
+
+.create a {
+  color: #0288d1;
+  text-decoration: none;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.create a:hover {
+  color: #01579b;
+  text-decoration: underline;
+}
+
+/* 🌐 ICONOS SOCIALES PREMIUM */
+.socials {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.socials svg {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  padding: 10px;
+  background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: pointer;
+  border: 2px solid rgba(2, 136, 209, 0.1);
+}
+
+.socials svg:hover {
+  transform: translateY(-5px) scale(1.05);
+  box-shadow: 0 12px 30px rgba(2, 136, 209, 0.2);
+  border-color: #29b6f6;
+}
+
+.socials svg:active {
+  transform: translateY(-2px) scale(0.98);
+}
+
+/* 🎨 DECORACIÓN DE CURVAS MEJORADAS */
+.top-shape {
+  position: fixed;
+  top: -50px;
+  left: -5%;
+  width: 110%;
+  height: 200px;
+  background: linear-gradient(135deg, #29b6f6 0%, #0277bd 100%);
+  border-bottom-left-radius: 50% 60%;
+  border-bottom-right-radius: 50% 60%;
+  z-index: 0;
+  pointer-events: none;
+  box-shadow: 0 10px 40px rgba(2, 136, 209, 0.3);
+}
+
+.bottom-shape {
+  position: fixed;
+  bottom: -50px;
+  left: -5%;
+  width: 110%;
+  height: 180px;
+  background: linear-gradient(135deg, #4fc3f7 0%, #81d4fa 100%);
+  border-top-left-radius: 50% 60%;
+  border-top-right-radius: 50% 60%;
+  z-index: 0;
+  pointer-events: none;
+  box-shadow: 0 -10px 40px rgba(79, 195, 247, 0.2);
+}
+
+/* 📱 RESPONSIVE */
+@media (max-height: 700px) {
+  .login-container {
+    padding: 30px 25px;
+  }
+
+  .title {
+    font-size: 2.5rem;
+  }
+
+  .subtitle {
+    font-size: 0.95rem;
+  }
+
+  .input {
+    margin-bottom: 12px;
+  }
+
+  .signin-btn {
+    height: 48px;
+  }
+
+  .socials svg {
+    width: 42px;
+    height: 42px;
+    padding: 8px;
+  }
+}
+
+@media (max-width: 400px) {
+  .login-container {
+    width: 95%;
+    padding: 30px 20px;
+  }
+
+  .title {
+    font-size: 2.2rem;
+  }
+}
+
+/* 🎨 TEMA PACIENTE */
+.patient-theme .title {
+  background: linear-gradient(135deg, #e65100 0%, #ff7043 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.patient-theme .forgot {
+  color: #e65100;
+}
+
+.patient-theme .forgot:hover {
+  color: #bf360c;
+}
+
+.patient-theme .signin-btn {
+  --background: linear-gradient(135deg, #ff7043 0%, #e64a19 100%);
+  --box-shadow: 0 10px 30px rgba(230, 81, 0, 0.35);
+}
+
+.patient-theme .signin-btn:hover {
+  --box-shadow: 0 15px 40px rgba(230, 81, 0, 0.45);
+}
+
+.patient-theme .create a {
+  color: #e65100;
+}
+
+.patient-theme .create a:hover {
+  color: #bf360c;
+}
+
+.patient-theme .top-shape {
+  background: linear-gradient(135deg, #ff7043 0%, #e64a19 100%);
+  box-shadow: 0 10px 40px rgba(230, 81, 0, 0.3);
+}
+
+.patient-theme .bottom-shape {
+  background: linear-gradient(135deg, #ff8a65 0%, #ffab91 100%);
+  box-shadow: 0 -10px 40px rgba(255, 112, 67, 0.2);
+}
+
+.patient-theme .socials svg {
+  border-color: rgba(230, 81, 0, 0.1);
+}
+
+.patient-theme .socials svg:hover {
+  border-color: #ff7043;
+  box-shadow: 0 12px 30px rgba(230, 81, 0, 0.2);
+}
+
+.patient-theme .input:focus-within {
+  border-color: #ff7043;
+  box-shadow: 0 8px 24px rgba(230, 81, 0, 0.15);
+}

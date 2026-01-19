@@ -1,0 +1,7 @@
+{
+  "name": "Pastibot2.0",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react-vite"
+}
