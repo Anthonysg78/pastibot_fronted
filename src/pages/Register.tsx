@@ -27,14 +27,22 @@ const Register: React.FC = () => {
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [caregiverCode, setCaregiverCode] = useState("");
 
   const [error, setError] = useState("");
 
-  // ============================
-  //  VALIDACIONES PROFESIONALES
-  // ============================
   const validarFormulario = () => {
     setError("");
+
+    if (role === 'CUIDADOR') {
+      setError("El registro de cuidadores está deshabilitado.");
+      return false;
+    }
+
+    if (role === 'PACIENTE' && !caregiverCode) {
+      setError("Debes ingresar el código de tu cuidador.");
+      return false;
+    }
 
     if (/\d/.test(name)) {
       setError("El nombre no puede contener números.");
@@ -46,8 +54,8 @@ const Register: React.FC = () => {
       return false;
     }
 
-    if (pass.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres.");
+    if (pass.length < 8) {
+      setError("La contraseña debe tener al menos 8 caracteres.");
       return false;
     }
 
@@ -59,9 +67,6 @@ const Register: React.FC = () => {
     return true;
   };
 
-  // =============================
-  //  📌 REGISTRO REAL AL BACKEND
-  // =============================
   const handleRegister = async () => {
     if (!validarFormulario()) return;
 
@@ -71,14 +76,15 @@ const Register: React.FC = () => {
         email,
         password: pass,
         gender: null,
-        role: role || null
+        role: role || null,
+        caregiverCode: role === 'PACIENTE' ? caregiverCode : undefined
       });
 
       // Redirigimos según el rol
       if (role === "CUIDADOR") {
-        history.push("/selectrole");
+        history.push("/care/home");
       } else {
-        history.push("/patient/home"); // Assuming navigate was meant to be history.push
+        history.push("/patient/home");
       }
 
     } catch (err: any) {
@@ -86,6 +92,11 @@ const Register: React.FC = () => {
 
       if (msg?.includes("El correo ya está registrado")) {
         setError("Ese correo ya está en uso.");
+        return;
+      }
+
+      if (msg?.includes("El código de cuidador")) {
+        setError(msg);
         return;
       }
 
@@ -104,11 +115,13 @@ const Register: React.FC = () => {
           <h1 className="title">
             {role === 'CUIDADOR' ? 'Registro Cuidador' : role === 'PACIENTE' ? 'Registro Paciente' : 'Crear cuenta'}
           </h1>
-          <p className="subtitle">Regístrate para empezar a usar Pastibot</p>
+          <p className="subtitle">
+            {role === 'PACIENTE' ? 'Únete a tu cuidador para empezar' : 'Regístrate para empezar a usar Pastibot'}
+          </p>
 
           {role === 'PACIENTE' && (
             <div style={{ background: '#FFF3E0', padding: '10px', borderRadius: '10px', marginBottom: '20px', fontSize: '0.85rem', color: '#E65100', border: '1px solid #FFE0B2' }}>
-              ⚠️ Usa tu propio correo electrónico. No uses el mismo que tu cuidador para evitar conflictos.
+              ⚠️ Necesitas el código de 6 letras (ej. PASTIBOT) que te dio tu cuidador.
             </div>
           )}
 
@@ -130,6 +143,16 @@ const Register: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
+
+            {role === 'PACIENTE' && (
+              <input
+                type="text"
+                placeholder="Código del Cuidador (Ejem: PASTIBOT)"
+                value={caregiverCode}
+                onChange={(e) => setCaregiverCode(e.target.value.toUpperCase())}
+                style={{ border: '2px solid #E65100', fontWeight: 'bold' }}
+              />
+            )}
 
             <input
               type="password"
