@@ -11,11 +11,11 @@ const Welcome: React.FC = () => {
     const location = useLocation();
     const { user, logout } = useAuth();
 
-    const handleSelect = (selectedRole: string) => {
+    const handleSelect = async (selectedRole: string) => {
         // 🔥 SI YA HAY SESIÓN Y EL ROL NO COINCIDE, CERRAR SESIÓN PARA EVITAR CONFUSIÓN
         if (user) {
             if (user.role !== selectedRole) {
-                logout();
+                await logout();
                 history.push(`/login?role=${selectedRole}`);
                 return;
             }

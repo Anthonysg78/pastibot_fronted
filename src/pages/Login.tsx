@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useHistory, useLocation } from "react-router-dom";
-import { IonPage, IonContent, IonInput, IonButton } from "@ionic/react";
+import { IonPage, IonContent, IonInput, IonButton, useIonViewWillEnter } from "@ionic/react";
 import { FaFacebook } from "react-icons/fa";
 import { FaSquareXTwitter } from "react-icons/fa6";
 import { FcGoogle } from "react-icons/fc";
@@ -32,27 +32,64 @@ const Login: React.FC = () => {
     setModalOpen(true);
   };
 
-  // 📋 Source of Truth: The URL
-  const getRoleFromUrl = () => {
+  const [role, setRole] = useState<string>('CUIDADOR');
+
+  // 🔄 Force update role on mount and when location changes
+  const updateRole = () => {
     const params = new URLSearchParams(location.search);
-    const r = params.get("role");
-    return (r === 'PACIENTE' || r === 'CUIDADOR') ? r : 'CUIDADOR';
+    const r = params.get("role")?.toUpperCase();
+    console.log("LOGIN ROUTE UPDATE:", location.search, "Found:", r);
+    setRole((r === 'PACIENTE' || r === 'CUIDADOR') ? r : 'CUIDADOR');
   };
 
-  const role = getRoleFromUrl();
+  useEffect(() => {
+    updateRole();
+  }, [location.search]);
+
+  // ⚡ Ionic Lifecycle: Ensure it runs even if page is cached
+  useIonViewWillEnter(() => {
+    updateRole();
+  });
 
   // 🛡️ EFECTO DE PROTECCIÓN: Si ya está logueado, redirigir según su estado
+  // 🛡️ EFECTO DE PROTECCIÓN: Si ya está logueado, redirigir según su estado
   useEffect(() => {
-    if (user && !authLoading) {
-      if (user.role) {
-        // Si el usuario ya tiene rol, mandarlo a su Home
-        history.replace(user.role === "CUIDADOR" ? "/care/home" : "/patient/home");
-      } else {
-        // Si no tiene rol (ej. login social nuevo), mandarlo a elegir
-        history.replace("/select-role?role=" + role);
+    const checkUserRole = async () => {
+      if (user && !authLoading) {
+        if (user.role) {
+          if (user.role === "PACIENTE") {
+            const p = user.patientProfile;
+            console.log("LOGIN CHECK - User:", user);
+            console.log("LOGIN CHECK - Patient Profile:", p);
+            if (!p || !p.age || !p.emergencyPhone) {
+              history.replace("/complete-profile");
+              return;
+            }
+            history.replace("/patient/home");
+          } else {
+            history.replace("/care/home");
+          }
+        } else {
+          // 🚀 AUTO-ASSIGN ROLE: Si no tiene rol pero sabemos cual quiere
+          if (role === 'PACIENTE' || role === 'CUIDADOR') {
+            console.log(`[AUTO-ROLE] Asignando rol ${role} automáticamente...`);
+            try {
+              await api.post('/auth/set-role', { role });
+              // Refrescamos el usuario para que el context tenga el rol nuevo
+              // NOTA: AuthContext expone getProfile? Sí, lo importamos del hook
+              window.location.reload(); // Manera segura de recargar todo el estado limpio
+            } catch (error) {
+              console.error("Error auto-asignando rol:", error);
+              history.replace("/select-role?role=" + role);
+            }
+          } else {
+            history.replace("/select-role?role=" + role);
+          }
+        }
       }
-    }
-  }, [user, history, authLoading]);
+    };
+    checkUserRole();
+  }, [user, history, authLoading, role]);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -140,9 +177,10 @@ const Login: React.FC = () => {
               onClick={async () => {
                 try {
                   await loginWithGoogle();
-                } catch (err) {
+                } catch (err: any) {
                   console.error("Firebase Google Error:", err);
-                  showModal('error', 'Error', 'No se pudo iniciar sesión con Google.');
+                  const detailedError = err?.response?.data?.message || err?.message || JSON.stringify(err);
+                  showModal('error', 'Error Google', `No se pudo iniciar sesión: ${detailedError}`);
                 }
               }}
             />

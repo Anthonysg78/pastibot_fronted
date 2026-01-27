@@ -1,0 +1,49 @@
+
+.complete-profile-page {
+    --background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+    display: flex;
+    flex-direction: column;
+}
+
+.setup-container {
+    padding: 30px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    margin: 20px 20px;
+    margin-top: 50px;
+}
+
+.setup-input {
+    margin-bottom: 20px;
+    --background: #f8fafc;
+    --padding-start: 15px;
+    --border-radius: 12px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.save-btn {
+    --background: #ff7043;
+    --background-hover: #f4511e;
+    --border-radius: 16px;
+    font-weight: 700;
+    margin-top: 20px;
+    height: 55px;
+    --box-shadow: 0 8px 20px rgba(255, 112, 67, 0.3);
+}
+
+.setup-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #37474f;
+    margin-bottom: 5px;
+    text-align: center;
+}
+
+.setup-subtitle {
+    color: #78909c;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 0.95rem;
+}

@@ -4,11 +4,13 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect, // <--- Added this
   signOut,
   onAuthStateChanged,
   getIdToken,
   User as FirebaseUser
 } from "firebase/auth";
+import { Capacitor } from "@capacitor/core"; // <--- Added this
 import { auth, googleProvider, facebookProvider } from "../firebase/config";
 
 interface User {
@@ -155,6 +157,12 @@ export const AuthProvider = ({ children }: any) => {
 
   const loginWithGoogle = async () => {
     try {
+      if (Capacitor.isNativePlatform()) {
+        await signInWithRedirect(auth, googleProvider);
+        // On redirect, we don't get a result immediately. 
+        // The onAuthStateChanged listener will handle the user state update.
+        return;
+      }
       const result = await signInWithPopup(auth, googleProvider);
       return await syncWithBackend(result.user);
     } catch (err) {
@@ -165,6 +173,10 @@ export const AuthProvider = ({ children }: any) => {
 
   const loginWithFacebook = async () => {
     try {
+      if (Capacitor.isNativePlatform()) {
+        await signInWithRedirect(auth, facebookProvider);
+        return;
+      }
       const result = await signInWithPopup(auth, facebookProvider);
       return await syncWithBackend(result.user);
     } catch (err) {
