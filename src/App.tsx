@@ -11,6 +11,7 @@ import SelectRole from "./pages/SelectRole";
 import Welcome from "./pages/Welcome";
 import Password from "./pages/password";
 import SocialSuccess from "./pages/SocialSuccess";
+import CompleteProfile from "./pages/CompleteProfile";
 
 import CareTabs from "./pages/care/CareTabs";
 import PatientTabs from "./pages/patient/PatientTabs";
@@ -69,6 +70,10 @@ const App: React.FC = () => {
             </Route>
             <Route exact path="/social-success">
               <SocialSuccess />
+            </Route>
+
+            <Route exact path="/complete-profile">
+              <CompleteProfile />
             </Route>
 
             {/* 🔥 NUEVA RUTA PARA CREAR CONTRASEÑA */}

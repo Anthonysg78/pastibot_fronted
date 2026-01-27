@@ -33,7 +33,16 @@ const SelectRole: React.FC = () => {
   // 🛡️ Si el usuario ya tiene rol, no dejarle estar aquí
   useEffect(() => {
     if (user && user.role && !authLoading) {
-      window.location.href = user.role === "CUIDADOR" ? "/care/home" : "/patient/home";
+      if (user.role === "PACIENTE") {
+        const p = user.patientProfile;
+        if (!p || !p.age || !p.emergencyPhone) {
+          history.replace("/complete-profile");
+          return;
+        }
+        history.replace("/patient/home");
+      } else {
+        history.replace("/care/home");
+      }
     }
 
     // 🔥 AUTO-DETECTAR ROL SI VIENE DE LOGIN/REGISTER
@@ -81,12 +90,24 @@ const SelectRole: React.FC = () => {
 
       if (res.data?.accessToken) {
         localStorage.setItem("token", res.data.accessToken);
-        showStatus('success', '¡Rol asignado!', 'Bienvenido a Pastibot. Ahora serás redirigido.');
-        setTimeout(() => {
-          window.location.href = backendRole === 'CUIDADOR' ? "/care/home" : "/patient/home";
-        }, 1500);
+        // Si es PACIENTE, siempre mandarlo a completar perfil porque acaba de nacer
+        if (backendRole === 'PACIENTE') {
+          showStatus('success', '¡Rol asignado!', 'Ahora completa tus datos médicos.');
+          setTimeout(() => {
+            window.location.href = "/complete-profile";
+          }, 1500);
+        } else {
+          showStatus('success', '¡Rol asignado!', 'Bienvenido a Pastibot.');
+          setTimeout(() => {
+            window.location.href = "/care/home";
+          }, 1500);
+        }
       } else {
-        history.push(backendRole === "CUIDADOR" ? "/care/home" : "/patient/home");
+        if (backendRole === 'PACIENTE') {
+          history.push("/complete-profile");
+        } else {
+          history.push("/care/home");
+        }
       }
 
     } catch (err: any) {

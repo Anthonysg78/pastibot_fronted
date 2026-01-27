@@ -14,14 +14,12 @@ import {
   IonTextarea,
   IonSelect,
   IonSelectOption,
-  IonAlert,
-  IonFab,
-  IonFabButton
+  IonAlert
 } from "@ionic/react";
 import { useHistory } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../api/axios";
-import { personCircle, chevronForwardOutline, checkmarkCircle, refreshOutline, pencilOutline, closeOutline, saveOutline, trashOutline, add } from "ionicons/icons";
+import { personCircle, chevronForwardOutline, checkmarkCircle, refreshOutline, pencilOutline, closeOutline, saveOutline, trashOutline } from "ionicons/icons";
 import "./CarePage.css";
 
 import StatusModal from "../../components/StatusModal";
@@ -32,6 +30,7 @@ type Patient = {
   age?: number;
   gender?: string;
   condition?: string;
+  emergencyPhone?: string;
   linkCode?: string;
   userId?: number;
   user?: {
@@ -64,6 +63,7 @@ const CarePatients: React.FC = () => {
   const [editGender, setEditGender] = useState<string>("");
   const [editCondition, setEditCondition] = useState<string>("");
   const [editName, setEditName] = useState<string>("");
+  const [editPhone, setEditPhone] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
 
@@ -134,6 +134,7 @@ const CarePatients: React.FC = () => {
     setEditAge(p.age ? p.age.toString() : "");
     setEditGender(p.gender || "");
     setEditCondition(p.condition || "");
+    setEditPhone(p.emergencyPhone || "");
   };
 
   const handleSavePatient = async () => {
@@ -144,7 +145,8 @@ const CarePatients: React.FC = () => {
         name: editName,
         age: editAge ? Number(editAge) : null,
         gender: editGender,
-        condition: editCondition
+        condition: editCondition,
+        emergencyPhone: editPhone
       });
       setEditingPatient(null);
       loadPatients(); // Recargar lista
@@ -295,6 +297,11 @@ const CarePatients: React.FC = () => {
                     <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>
                       {p.age ? `${p.age} años • ` : ""}{p.condition || "Sin diagnóstico"}
                     </p>
+                    {p.emergencyPhone && (
+                      <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#f4511e', fontWeight: 700 }}>
+                        📞 {p.emergencyPhone}
+                      </p>
+                    )}
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -374,6 +381,11 @@ const CarePatients: React.FC = () => {
                 </IonSelect>
               </IonItem>
             </div>
+
+            <IonItem className="pro-input-item" style={{ marginBottom: '15px' }}>
+              <IonLabel position="stacked">Teléfono de Emergencia</IonLabel>
+              <IonInput type="tel" value={editPhone} onIonInput={e => setEditPhone(String(e.detail.value))} />
+            </IonItem>
 
             <IonItem className="pro-input-item" style={{ marginBottom: '30px' }}>
               <IonLabel position="stacked">Condición / Diagnóstico</IonLabel>
