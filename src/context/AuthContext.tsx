@@ -8,6 +8,7 @@ import {
   signOut,
   onAuthStateChanged,
   getIdToken,
+  signInWithCustomToken, // <--- Added this
   User as FirebaseUser
 } from "firebase/auth";
 import { Capacitor } from "@capacitor/core"; // <--- Added this
@@ -77,7 +78,13 @@ export const AuthProvider = ({ children }: any) => {
       const res = await api.post("/auth/firebase-login", { idToken });
 
       if (res.data?.accessToken) {
-        const { accessToken, user: loggedUser } = res.data;
+        const { accessToken, firebaseToken, user: loggedUser } = res.data;
+
+        // 🚀 LOGIN NATIVO EN FIREBASE USANDO EL TOKEN DEL BACKEND
+        if (firebaseToken) {
+          await signInWithCustomToken(auth, firebaseToken);
+        }
+
         localStorage.setItem("token", accessToken);
         setAuthToken(accessToken);
         setTokenState(accessToken);
@@ -157,16 +164,23 @@ export const AuthProvider = ({ children }: any) => {
 
   const loginWithGoogle = async () => {
     try {
-      // Usar Popup en lugar de Redirect, ya que Redirect intenta volver a "localhost" 
-      // y el navegador del móvil no encuentra la App.
+      console.log("🚀 Iniciando Login con Google (Firebase Puro)...");
+
+      // En móviles, signInWithPopup a veces falla si no hay un plugin nativo,
+      // pero es la única forma de no usar el backend como proxy.
       const result = await signInWithPopup(auth, googleProvider);
+      console.log("✅ Firebase Auth exitoso:", result.user.email);
+
+      // Sincronizamos con el backend para que sepa que existimos
       return await syncWithBackend(result.user);
     } catch (err: any) {
-      console.error("Google Login Error:", err);
-      // Si el popup falla, intentamos el flujo directo al backend como último recurso
-      if (err.code === "auth/popup-blocked" || err.code === "auth/operation-not-supported-in-this-environment") {
-        const baseURL = api.defaults.baseURL || "https://pastibotbackend-production.up.railway.app";
-        window.location.href = `${baseURL}/auth/google`;
+      console.error("❌ Error en Firebase Google Login:", err);
+
+      // Si falla por entorno (común en APKs sin plugin nativo)
+      if (err.code === 'auth/operation-not-supported-in-this-environment' || err.code === 'auth/popup-blocked') {
+        alert("Tu celular no permite ventanas emergentes para el login. Intentando modo alternativo...");
+        await signInWithRedirect(auth, googleProvider);
+        return;
       }
       throw err;
     }

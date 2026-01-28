@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "967662848926-vs3mak07o6edcqphiqevl5qt03ss26jd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.pastibot.app",
+            "certificate_hash": "47c1dc259e0a216a8b27c401378fe7a1e753eddc"
+          }
+        },
+        {
           "client_id": "967662848926-k5uikarqm0t1lkka5aqbug7q2oai20ug.apps.googleusercontent.com",
           "client_type": 3
         }
