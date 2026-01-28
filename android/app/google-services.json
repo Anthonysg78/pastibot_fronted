@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "967662848926",
+    "project_id": "pastibot-a970c",
+    "storage_bucket": "pastibot-a970c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:967662848926:android:05867384c9d6cf2228648f",
+        "android_client_info": {
+          "package_name": "com.pastibot.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "967662848926-k5uikarqm0t1lkka5aqbug7q2oai20ug.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDMwaEQO4uTqFhKLQo2Y6rT6qqDGMwAzyU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "967662848926-k5uikarqm0t1lkka5aqbug7q2oai20ug.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
