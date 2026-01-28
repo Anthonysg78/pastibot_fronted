@@ -80,10 +80,10 @@ const Login: React.FC = () => {
               window.location.reload(); // Manera segura de recargar todo el estado limpio
             } catch (error) {
               console.error("Error auto-asignando rol:", error);
-              history.replace("/select-role?role=" + role);
+              history.replace("/selectrole?role=" + role);
             }
           } else {
-            history.replace("/select-role?role=" + role);
+            history.replace("/selectrole?role=" + role);
           }
         }
       }
@@ -176,6 +176,7 @@ const Login: React.FC = () => {
               className="social-icon google"
               onClick={async () => {
                 try {
+                  localStorage.setItem("pendingRole", role); // 💾 Guardamos el rol elegido
                   await loginWithGoogle();
                 } catch (err: any) {
                   console.error("Firebase Google Error:", err);

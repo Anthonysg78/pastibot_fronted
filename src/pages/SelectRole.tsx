@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { IonPage, IonContent, IonModal } from "@ionic/react";
 import { FaUserNurse } from "react-icons/fa";
@@ -7,6 +8,7 @@ import { useAuth } from "../context/AuthContext";
 import { api } from "../api/axios";
 import StatusModal from "../components/StatusModal";
 import "./SelectRole.css";
+import { getRedirectPath } from "../utils/routing";
 
 const SelectRole: React.FC = () => {
   const history = useHistory();
@@ -32,30 +34,32 @@ const SelectRole: React.FC = () => {
 
   // 🛡️ Si el usuario ya tiene rol, no dejarle estar aquí
   useEffect(() => {
-    if (user && user.role && !authLoading) {
-      if (user.role === "PACIENTE") {
-        const p = user.patientProfile;
-        if (!p || !p.age || !p.emergencyPhone) {
-          history.replace("/complete-profile");
-          return;
-        }
-        history.replace("/patient/home");
-      } else {
-        history.replace("/care/home");
+    console.log("SelectRole - Estado actual:", { user, authLoading, role: user?.role });
+
+    if (!authLoading && user && user.role) {
+      const nextPath = getRedirectPath(user);
+      console.log("SelectRole - Usuario tiene rol, redirigiendo a:", nextPath);
+
+      // Evitar bucle infinito si getRedirectPath nos devuelve a selectrole (no debería si tiene role)
+      if (nextPath !== '/selectrole') {
+        history.replace(nextPath);
       }
+      return;
     }
 
     // 🔥 AUTO-DETECTAR ROL SI VIENE DE LOGIN/REGISTER
-    const params = new URLSearchParams(window.location.search);
-    const roleParam = params.get("role");
-    if (roleParam === "PACIENTE") {
-      setSelectedRole("patient");
-      setShowConfirmModal(true);
-    } else if (roleParam === "CUIDADOR") {
-      setSelectedRole("care");
-      setShowConfirmModal(true);
+    if (!authLoading) {
+      const params = new URLSearchParams(window.location.search);
+      const roleParam = params.get("role");
+      if (roleParam === "PACIENTE") {
+        setSelectedRole("patient");
+        setShowConfirmModal(true);
+      } else if (roleParam === "CUIDADOR") {
+        setSelectedRole("care");
+        setShowConfirmModal(true);
+      }
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, history]);
 
   const handleSelect = (role: "care" | "patient") => {
     setSelectedRole(role);
@@ -118,6 +122,30 @@ const SelectRole: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // 🔍 DEBUG: Mostrar siempre algo en pantalla
+  console.log("SelectRole - Renderizando. authLoading:", authLoading, "user:", user);
+
+  // Mostrar loading mientras se determina el estado de autenticación
+  if (authLoading) {
+    console.log("SelectRole - Mostrando spinner de carga");
+    return (
+      <IonPage>
+        <IonContent fullscreen className="selectrole-page">
+          <div className="top-gradient"></div>
+          <div className="bottom-gradient"></div>
+          <div className="role-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '20px' }}>⏳</div>
+            <h2 style={{ color: '#0288d1', marginBottom: '10px' }}>Cargando...</h2>
+            <p style={{ color: '#777' }}>Verificando tu sesión</p>
+            <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '20px' }}>authLoading: {String(authLoading)}</p>
+          </div>
+        </IonContent>
+      </IonPage>
+    );
+  }
+
+  console.log("SelectRole - Mostrando UI de selección de rol");
 
   return (
     <IonPage>

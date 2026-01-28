@@ -3,6 +3,7 @@ import { useHistory } from "react-router-dom";
 import { IonPage, IonContent } from "@ionic/react";
 import { api, setAuthToken } from "../api/axios";
 import { useAuth } from "../context/AuthContext";
+import { getRedirectPath } from "../utils/routing";
 
 const SocialSuccess: React.FC = () => {
   const history = useHistory();
@@ -19,40 +20,44 @@ const SocialSuccess: React.FC = () => {
 
     // Guardamos token y actualizamos API
     localStorage.setItem("token", token);
-    setAuthToken(token); // 👈 Usar helper para consistencia
+    setAuthToken(token);
 
-    // Forzar recarga del perfil para que PatientHome detecte la falta de vinculación
+    // Esperar a que getProfile() actualice el contexto
     getProfile().then(() => {
-      // 1️⃣ Consultar perfil del usuario desde el backend
-      api.get("/auth/profile")
-        .then((res) => {
-          const user = res.data;
+      // Pequeño delay para asegurar que el contexto se actualizó
+      setTimeout(() => {
+        // Obtener el usuario actualizado del localStorage o hacer una llamada directa
+        api.get("/auth/profile")
+          .then((res) => {
+            const user = res.data;
+            console.log("SocialSuccess - Usuario cargado:", user);
 
-          console.log("USUARIO LOGUEADO SOCIAL:", user);
+            // 🔥 LOGIC PRO: Usar helper centralizado
+            const nextPath = getRedirectPath(user);
+            console.log("SocialSuccess - Redirigiendo a:", nextPath);
 
-          // a. Si ES CUIDADOR -> directo a su panel
-          if (user.role === "CUIDADOR") {
-            history.replace("/care/home");
-            return;
-          }
+            // Si nos dice ir a selectrole pero teníamos un pendingRole, ajustamos
+            if (nextPath === '/selectrole') {
+              const pendingRole = localStorage.getItem("pendingRole");
+              if (pendingRole) {
+                localStorage.removeItem("pendingRole");
+                history.replace(`/selectrole?role=${pendingRole}`);
+                return;
+              }
+            }
 
-          // b. Si ES PACIENTE -> directo a su home (allí le pedirá el código si no tiene perfil)
-          if (user.role === "PACIENTE") {
-            history.replace("/patient/home");
-            return;
-          }
-
-          // c. Si no tiene rol aún (raro en registro pero posible en social login)
-          if (!user.role) {
-            history.replace("/selectrole");
-            return;
-          }
-        })
-        .catch(() => {
-          history.replace("/login");
-        });
+            history.replace(nextPath);
+          })
+          .catch((err) => {
+            console.error("SocialSuccess - Error al obtener perfil:", err);
+            history.replace("/login");
+          });
+      }, 300); // Pequeño delay para que el contexto se actualice
+    }).catch((err) => {
+      console.error("SocialSuccess - Error en getProfile:", err);
+      history.replace("/login");
     });
-  }, [history]);
+  }, [history, getProfile]);
 
   return (
     <IonPage>

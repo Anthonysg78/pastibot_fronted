@@ -157,14 +157,9 @@ export const AuthProvider = ({ children }: any) => {
 
   const loginWithGoogle = async () => {
     try {
-      if (Capacitor.isNativePlatform()) {
-        await signInWithRedirect(auth, googleProvider);
-        // On redirect, we don't get a result immediately. 
-        // The onAuthStateChanged listener will handle the user state update.
-        return;
-      }
-      const result = await signInWithPopup(auth, googleProvider);
-      return await syncWithBackend(result.user);
+      // Usar el flujo de redirección del backend en lugar del SDK cliente de Firebase
+      const baseURL = api.defaults.baseURL || "http://localhost:3000";
+      window.location.href = `${baseURL}/auth/google`;
     } catch (err) {
       console.error("Google Login Error:", err);
       throw err;

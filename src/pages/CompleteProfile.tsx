@@ -5,14 +5,18 @@ import { api } from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import StatusModal from "../components/StatusModal";
 import "./CompleteProfile.css";
+import { getRedirectPath } from "../utils/routing";
 
 const CompleteProfile: React.FC = () => {
     const history = useHistory();
     const { user, getProfile } = useAuth();
 
     // Si ya tiene todo, mandar al home
-    if (user && user.patientProfile?.age && user.patientProfile?.emergencyPhone) {
-        history.replace("/patient/home");
+    if (user) {
+        const nextPath = getRedirectPath(user);
+        if (nextPath === '/patient/home') {
+            history.replace("/patient/home");
+        }
     }
 
     const [age, setAge] = useState<number | undefined>(user?.patientProfile?.age || undefined);

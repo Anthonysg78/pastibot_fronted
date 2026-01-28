@@ -43,7 +43,7 @@ const Register: React.FC = () => {
       if (user.role) {
         history.replace(user.role === "CUIDADOR" ? "/care/home" : "/patient/home");
       } else {
-        history.replace("/select-role?role=" + role);
+        history.replace("/selectrole?role=" + role);
       }
     }
   }, [user, history, authLoading]);
@@ -196,6 +196,7 @@ const Register: React.FC = () => {
               className="social-icon google"
               onClick={async () => {
                 try {
+                  localStorage.setItem("pendingRole", role); // 💾 Guardamos el rol elegido
                   await loginWithGoogle();
                 } catch (err) {
                   console.error("Firebase Google Error:", err);
