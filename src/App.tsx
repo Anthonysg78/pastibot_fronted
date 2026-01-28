@@ -1,6 +1,7 @@
-import { Redirect, Route } from "react-router-dom";
+import React, { useEffect } from "react";
 import { IonApp, IonRouterOutlet, setupIonicReact } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
+import { Redirect, Route } from "react-router-dom";
 
 import Splash from "./pages/Splash";
 import Login from "./pages/Login";
@@ -38,9 +39,33 @@ import "./theme/variables.css";
 import "./theme/animations.css";
 import CareMedicines from "./pages/care/CareMedicines";
 
+import { App as CapacitorApp } from "@capacitor/app"; // <--- Add this
+
 setupIonicReact();
 
 const App: React.FC = () => {
+  // 🔥 MANEJO DE DEEP LINKS (Para volver del Navegador al APK)
+  useEffect(() => {
+    const handleDeepLink = (data: any) => {
+      console.log("Deep link received:", data.url);
+      const url = new URL(data.url);
+
+      // Si la URL contiene el token de éxito (ej. com.pastibot.app://social-success?token=...)
+      if (url.host === 'social-success' || url.pathname.includes('social-success')) {
+        const token = url.searchParams.get('token');
+        if (token) {
+          window.location.href = `/social-success?token=${token}`;
+        }
+      }
+    };
+
+    CapacitorApp.addListener('appUrlOpen', handleDeepLink);
+
+    return () => {
+      CapacitorApp.removeAllListeners();
+    };
+  }, []);
+
   return (
     <IonApp>
       <AuthProvider>
