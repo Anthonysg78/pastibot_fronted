@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { api, setAuthToken } from "../api/axios";
+import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -9,6 +10,8 @@ import {
   onAuthStateChanged,
   getIdToken,
   signInWithCustomToken, // <--- Added this
+  signInWithCredential,
+  GoogleAuthProvider,
   User as FirebaseUser
 } from "firebase/auth";
 import { Capacitor } from "@capacitor/core"; // <--- Added this
@@ -78,12 +81,7 @@ export const AuthProvider = ({ children }: any) => {
       const res = await api.post("/auth/firebase-login", { idToken });
 
       if (res.data?.accessToken) {
-        const { accessToken, firebaseToken, user: loggedUser } = res.data;
-
-        // 🚀 LOGIN NATIVO EN FIREBASE USANDO EL TOKEN DEL BACKEND
-        if (firebaseToken) {
-          await signInWithCustomToken(auth, firebaseToken);
-        }
+        const { accessToken, user: loggedUser } = res.data;
 
         localStorage.setItem("token", accessToken);
         setAuthToken(accessToken);
@@ -164,10 +162,20 @@ export const AuthProvider = ({ children }: any) => {
 
   const loginWithGoogle = async () => {
     try {
-      // 🚀 SOLUCIÓN DEFINITIVA PARA APK:
-      // Redirigimos al backend para que maneje el OAuth y regrese con el Custom Token.
-      const baseURL = "https://pastibotbackend-production.up.railway.app";
-      window.location.href = `${baseURL}/auth/google`;
+      if (Capacitor.isNativePlatform()) {
+        // 🚀 LOGIN NATIVO (Estilo Echobeat)
+        const result = await FirebaseAuthentication.signInWithGoogle();
+        if (result.credential?.idToken) {
+          const credential = GoogleAuthProvider.credential(result.credential.idToken);
+          const userCredential = await signInWithCredential(auth, credential);
+          return await syncWithBackend(userCredential.user);
+        }
+        throw new Error("No se obtuvo el ID Token de Google.");
+      } else {
+        // En Web seguimos con el flujo normal de popup
+        const result = await signInWithPopup(auth, googleProvider);
+        return await syncWithBackend(result.user);
+      }
     } catch (err) {
       console.error("Google Login Error:", err);
       throw err;
