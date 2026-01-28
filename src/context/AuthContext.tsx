@@ -157,11 +157,17 @@ export const AuthProvider = ({ children }: any) => {
 
   const loginWithGoogle = async () => {
     try {
-      // Usar el flujo de redirección del backend en lugar del SDK cliente de Firebase
-      const baseURL = api.defaults.baseURL || "http://localhost:3000";
-      window.location.href = `${baseURL}/auth/google`;
-    } catch (err) {
+      // Usar Popup en lugar de Redirect, ya que Redirect intenta volver a "localhost" 
+      // y el navegador del móvil no encuentra la App.
+      const result = await signInWithPopup(auth, googleProvider);
+      return await syncWithBackend(result.user);
+    } catch (err: any) {
       console.error("Google Login Error:", err);
+      // Si el popup falla, intentamos el flujo directo al backend como último recurso
+      if (err.code === "auth/popup-blocked" || err.code === "auth/operation-not-supported-in-this-environment") {
+        const baseURL = api.defaults.baseURL || "https://pastibotbackend-production.up.railway.app";
+        window.location.href = `${baseURL}/auth/google`;
+      }
       throw err;
     }
   };
