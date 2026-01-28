@@ -53,8 +53,10 @@ const App: React.FC = () => {
       // Si la URL contiene el token de éxito (ej. com.pastibot.app://social-success?token=...)
       if (url.host === 'social-success' || url.pathname.includes('social-success')) {
         const token = url.searchParams.get('token');
+        const firebaseToken = url.searchParams.get('firebaseToken');
         if (token) {
-          window.location.href = `/social-success?token=${token}`;
+          const redirectURL = `/social-success?token=${token}${firebaseToken ? `&firebaseToken=${firebaseToken}` : ''}`;
+          window.location.href = redirectURL;
         }
       }
     };

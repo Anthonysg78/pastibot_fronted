@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { useHistory } from "react-router-dom";
 import { IonPage, IonContent } from "@ionic/react";
+import { signInWithCustomToken } from "firebase/auth";
 import { api, setAuthToken } from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { getRedirectPath } from "../utils/routing";
@@ -12,6 +13,7 @@ const SocialSuccess: React.FC = () => {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get("token");
+    const firebaseToken = urlParams.get("firebaseToken");
 
     if (!token) {
       history.replace("/login");
@@ -21,6 +23,15 @@ const SocialSuccess: React.FC = () => {
     // Guardamos token y actualizamos API
     localStorage.setItem("token", token);
     setAuthToken(token);
+
+    // 🚀 LOGIN NATIVO EN FIREBASE SI VIENE EL TOKEN
+    if (firebaseToken) {
+      import("../firebase/config").then(({ auth }) => {
+        signInWithCustomToken(auth, firebaseToken)
+          .then(() => console.log("🔥 Firebase Auth exitoso desde SocialSuccess"))
+          .catch(err => console.error("❌ Error en Firebase Auth SocialSuccess:", err));
+      });
+    }
 
     // Esperar a que getProfile() actualice el contexto
     getProfile().then(() => {
