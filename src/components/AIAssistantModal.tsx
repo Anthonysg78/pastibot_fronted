@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { IonModal, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonIcon, IonSpinner } from '@ionic/react';
 import { close, send, volumeMedium, volumeMute, volumeHigh, mic, stopCircle } from 'ionicons/icons';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { sendChatMessage, ChatMessage, transcribeAudio } from '../api/groqApi';
 import './AIAssistantModal.css';
 
@@ -61,6 +62,12 @@ const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ isOpen, onClose }) 
     const startRecording = async () => {
         try {
             console.log('Iniciando grabación...');
+
+            // Feedback vibración
+            try {
+                await Haptics.impact({ style: ImpactStyle.Medium });
+            } catch (e) { /* Ignorar si no está disponible */ }
+
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
             // Determinar el tipo de audio soportado
@@ -78,6 +85,7 @@ const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ isOpen, onClose }) 
 
             mediaRecorder.ondataavailable = (event) => {
                 if (event.data.size > 0) {
+                    console.log('Capturando fragmento de audio:', event.data.size, 'bytes');
                     audioChunksRef.current.push(event.data);
                 }
             };
@@ -91,8 +99,9 @@ const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ isOpen, onClose }) 
                 stream.getTracks().forEach(track => track.stop());
             };
 
-            mediaRecorder.start();
+            mediaRecorder.start(1000); // Enviar datos cada segundo
             setIsRecording(true);
+            console.log('Grabación iniciada correctamente');
 
             // Cancelar cualquier voz activa de la IA al empezar a grabar
             if (window.speechSynthesis) {
@@ -107,10 +116,15 @@ const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ isOpen, onClose }) 
         }
     };
 
-    const stopRecording = () => {
+    const stopRecording = async () => {
         if (mediaRecorderRef.current && isRecording) {
             mediaRecorderRef.current.stop();
             setIsRecording(false);
+
+            // Feedback vibración al soltar
+            try {
+                await Haptics.impact({ style: ImpactStyle.Light });
+            } catch (e) { /* Ignorar */ }
         }
     };
 
@@ -143,9 +157,11 @@ const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ isOpen, onClose }) 
                 }
             } else {
                 console.error('Error en transcripción:', transcriptionResponse.error);
+                alert('No pudimos entender el audio: ' + (transcriptionResponse.error || 'Intenta hablar más claro.'));
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error procesando mensaje de voz:', error);
+            alert('Error al procesar el audio: ' + (error.message || 'Desconocido'));
         } finally {
             setIsLoading(false);
         }
@@ -296,8 +312,9 @@ const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ isOpen, onClose }) 
                 ) : (
                     <button
                         className={`ai-mic-button ${isRecording ? 'recording' : ''}`}
-                        onMouseDown={startRecording}
-                        onMouseUp={stopRecording}
+                        onMouseDown={(e) => { e.preventDefault(); startRecording(); }}
+                        onMouseUp={(e) => { e.preventDefault(); stopRecording(); }}
+                        onMouseLeave={(e) => { if (isRecording) stopRecording(); }}
                         onTouchStart={(e) => { e.preventDefault(); startRecording(); }}
                         onTouchEnd={(e) => { e.preventDefault(); stopRecording(); }}
                         disabled={isLoading}
