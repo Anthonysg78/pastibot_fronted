@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useHistory, useLocation } from "react-router-dom";
 import { IonPage, IonContent, IonInput, IonButton, useIonViewWillEnter } from "@ionic/react";
-import { FaFacebook } from "react-icons/fa";
-import { FaSquareXTwitter } from "react-icons/fa6";
 import { FcGoogle } from "react-icons/fc";
 
 import { useAuth } from "../context/AuthContext";
@@ -13,7 +11,7 @@ import "./Login.css";
 const Login: React.FC = () => {
   const history = useHistory();
   const location = useLocation();
-  const { login: authLogin, loginWithGoogle, loginWithFacebook, user, loading: authLoading } = useAuth();
+  const { login: authLogin, loginWithGoogle, user, loading: authLoading } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,14 +30,21 @@ const Login: React.FC = () => {
     setModalOpen(true);
   };
 
-  const [role, setRole] = useState<string>('CUIDADOR');
+  // 🚀 LAZY INIT: Leer URL directamente al iniciar para evitar flash de "CUIDADOR"
+  const [role, setRole] = useState<string>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const r = params.get("role")?.toUpperCase();
+    return (r === 'PACIENTE' || r === 'CUIDADOR') ? r : 'CUIDADOR';
+  });
 
   // 🔄 Force update role on mount and when location changes
   const updateRole = () => {
     const params = new URLSearchParams(location.search);
     const r = params.get("role")?.toUpperCase();
     console.log("LOGIN ROUTE UPDATE:", location.search, "Found:", r);
-    setRole((r === 'PACIENTE' || r === 'CUIDADOR') ? r : 'CUIDADOR');
+    if (r === 'PACIENTE' || r === 'CUIDADOR') {
+      setRole(r);
+    }
   };
 
   useEffect(() => {
@@ -51,7 +56,6 @@ const Login: React.FC = () => {
     updateRole();
   });
 
-  // 🛡️ EFECTO DE PROTECCIÓN: Si ya está logueado, redirigir según su estado
   // 🛡️ EFECTO DE PROTECCIÓN: Si ya está logueado, redirigir según su estado
   useEffect(() => {
     const checkUserRole = async () => {
@@ -171,7 +175,7 @@ const Login: React.FC = () => {
 
           <div className="divider">O inicia sesión con</div>
 
-          <div className="socials">
+          <div className="socials" style={{ justifyContent: 'center' }}>
             <FcGoogle
               className="social-icon google"
               onClick={async () => {
@@ -185,18 +189,6 @@ const Login: React.FC = () => {
                 }
               }}
             />
-            <FaFacebook
-              className="social-icon facebook"
-              onClick={async () => {
-                try {
-                  await loginWithFacebook();
-                } catch (err) {
-                  console.error("Firebase Facebook Error:", err);
-                  showModal('error', 'Error', 'No se pudo iniciar sesión con Facebook.');
-                }
-              }}
-            />
-            <FaSquareXTwitter className="social-icon twitter" />
           </div>
         </div>
 

@@ -15,6 +15,7 @@ import PatientMedicines from "./PatientMedicines";
 import PatientRobot from "./PatientRobot";
 import PatientHistory from "./PatientHistory";
 import PatientProfile from "./PatientProfile";
+import AIAssistantButton from "../../components/AIAssistantButton";
 
 const PatientTabs: React.FC = () => {
   return (
@@ -56,6 +57,9 @@ const PatientTabs: React.FC = () => {
           <IonLabel>Historial</IonLabel>
         </IonTabButton>
       </IonTabBar>
+
+      {/* AI Assistant Button */}
+      <AIAssistantButton />
     </IonTabs>
   );
 };

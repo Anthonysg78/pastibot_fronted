@@ -97,20 +97,30 @@ export const AuthProvider = ({ children }: any) => {
 
   // Observe Firebase Auth state
   useEffect(() => {
+    const initAuth = async () => {
+      // 🚀 PRIMERO: Intentar recuperar sesión local (Backend Token)
+      const savedToken = localStorage.getItem("token");
+      if (savedToken) {
+        console.log("🔄 Restaurando sesión desde LocalStorage...");
+        setTokenState(savedToken);
+        setAuthToken(savedToken);
+        await getProfile(); // Verificar si el token sigue vivo
+      } else {
+        setLoading(false); // Si no hay token, dejamos de cargar (User = null)
+      }
+    };
+
+    initAuth();
+
+    // 📡 SEGUNDO: Escuchar a Firebase (como respaldo o para nuevos logins)
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // We have a firebase user, ensure we are synced with backend
-        const savedToken = localStorage.getItem("token");
-        if (!savedToken) {
+        // Solo sincronizamos si NO tenemos usuario ya cargado (para no pisar)
+        // O si acabamos de hacer login nativo
+        if (!localStorage.getItem("token")) {
+          console.log("🔥 Firebase User detectado, sincronizando...");
           await syncWithBackend(firebaseUser);
-        } else {
-          setTokenState(savedToken);
-          setAuthToken(savedToken);
-          getProfile();
         }
-      } else {
-        // No firebase user
-        setLoading(false);
       }
     });
 

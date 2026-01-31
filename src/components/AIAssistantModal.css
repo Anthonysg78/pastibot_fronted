@@ -1,0 +1,207 @@
+.ai-assistant-modal {
+    --width: 90%;
+    --max-width: 500px;
+    --height: 80%;
+    --border-radius: 20px;
+}
+
+.ai-modal-toolbar {
+    --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --color: white;
+    --border-width: 0;
+}
+
+.ai-modal-title {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ai-icon {
+    font-size: 24px;
+}
+
+.ai-modal-content {
+    --background: #f5f7fa;
+}
+
+.messages-container {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 100%;
+}
+
+.welcome-message {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+}
+
+.welcome-message h3 {
+    color: #667eea;
+    margin-bottom: 12px;
+    font-size: 20px;
+}
+
+.welcome-message p {
+    margin: 8px 0;
+    line-height: 1.6;
+}
+
+.welcome-message .hint {
+    color: #764ba2;
+    font-weight: 500;
+    margin-top: 20px;
+}
+
+.message {
+    display: flex;
+    margin-bottom: 8px;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.user-message {
+    justify-content: flex-end;
+}
+
+.assistant-message {
+    justify-content: flex-start;
+}
+
+.message-content {
+    max-width: 80%;
+    padding: 12px 16px;
+    border-radius: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.user-message .message-content {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.assistant-message .message-content {
+    background: white;
+    color: #333;
+    border-bottom-left-radius: 4px;
+}
+
+.message-content p {
+    margin: 0;
+    line-height: 1.5;
+    word-wrap: break-word;
+    flex: 1;
+}
+
+.message-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #666;
+}
+
+.typing-indicator ion-spinner {
+    width: 20px;
+    height: 20px;
+}
+
+.ai-input-container {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    padding: 16px;
+    background: white;
+    border-top: 1px solid #e0e0e0;
+}
+
+.ai-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 20px;
+    font-size: 15px;
+    font-family: inherit;
+    resize: none;
+    max-height: 100px;
+    transition: border-color 0.3s ease;
+}
+
+.ai-input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.ai-input:disabled {
+    background: #f5f5f5;
+    cursor: not-allowed;
+}
+
+.ai-send-button {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.ai-send-button:hover:not(:disabled) {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.ai-send-button:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.ai-send-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.ai-send-button ion-icon {
+    font-size: 20px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .ai-assistant-modal {
+        --width: 100%;
+        --height: 100%;
+        --border-radius: 0;
+    }
+
+    .message-content {
+        max-width: 85%;
+    }
+}

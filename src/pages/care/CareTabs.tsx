@@ -18,6 +18,7 @@ import CareControl from "./CareControl";
 import CarePatients from "./CarePatients";
 import CareProfile from "./CareProfile";
 import CareMonitoring from "./CareMonitoring";
+import AIAssistantButton from "../../components/AIAssistantButton";
 
 import "./CareTabs.css";
 
@@ -61,6 +62,9 @@ const CareTabs: React.FC = () => {
         </IonTabButton>
 
       </IonTabBar>
+
+      {/* AI Assistant Button */}
+      <AIAssistantButton />
     </IonTabs>
   );
 };
