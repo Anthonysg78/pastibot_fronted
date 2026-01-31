@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { IonModal, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonIcon, IonSpinner } from '@ionic/react';
-import { close, send } from 'ionicons/icons';
+import { close, send, volumeMedium, volumeMute, volumeHigh } from 'ionicons/icons';
 import { sendChatMessage, ChatMessage } from '../api/groqApi';
 import './AIAssistantModal.css';
 
@@ -13,7 +13,9 @@ const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ isOpen, onClose }) 
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [inputMessage, setInputMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const speechUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -22,6 +24,36 @@ const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ isOpen, onClose }) 
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
+
+    // Detener voz al cerrar el modal
+    useEffect(() => {
+        return () => {
+            window.speechSynthesis.cancel();
+        };
+    }, []);
+
+    const speak = (text: string) => {
+        if (!isVoiceEnabled) return;
+
+        // Cancelar cualquier lectura previa
+        window.speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'es-ES'; // Forzar español
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+
+        speechUtteranceRef.current = utterance;
+        window.speechSynthesis.speak(utterance);
+    };
+
+    const toggleVoice = () => {
+        const newStatus = !isVoiceEnabled;
+        setIsVoiceEnabled(newStatus);
+        if (!newStatus) {
+            window.speechSynthesis.cancel();
+        }
+    };
 
     const handleSendMessage = async () => {
         if (!inputMessage.trim() || isLoading) return;
@@ -46,6 +78,9 @@ const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ isOpen, onClose }) 
                     content: response.response,
                 };
                 setMessages((prev) => [...prev, assistantMessage]);
+
+                // Hablar la respuesta automáticamente
+                speak(response.response);
             } else {
                 // Mensaje de error
                 const errorMessage: ChatMessage = {
@@ -74,9 +109,8 @@ const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ isOpen, onClose }) 
     };
 
     const handleModalClose = () => {
+        window.speechSynthesis.cancel();
         onClose();
-        // Opcional: limpiar mensajes al cerrar
-        // setMessages([]);
     };
 
     return (
@@ -86,6 +120,9 @@ const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ isOpen, onClose }) 
                     <IonTitle className="ai-modal-title">
                         <span className="ai-icon">🧠</span> Asistente IA
                     </IonTitle>
+                    <IonButton slot="end" fill="clear" onClick={toggleVoice} className="voice-toggle-button">
+                        <IonIcon icon={isVoiceEnabled ? volumeHigh : volumeMute} />
+                    </IonButton>
                     <IonButton slot="end" fill="clear" onClick={handleModalClose}>
                         <IonIcon icon={close} />
                     </IonButton>
@@ -108,7 +145,15 @@ const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ isOpen, onClose }) 
                             className={`message ${msg.role === 'user' ? 'user-message' : 'assistant-message'}`}
                         >
                             <div className="message-content">
-                                {msg.role === 'assistant' && <span className="message-icon">🤖</span>}
+                                {msg.role === 'assistant' && (
+                                    <button
+                                        className="repeat-voice-button"
+                                        onClick={() => speak(msg.content)}
+                                        title="Repetir lectura"
+                                    >
+                                        <IonIcon icon={volumeMedium} />
+                                    </button>
+                                )}
                                 <p>{msg.content}</p>
                                 {msg.role === 'user' && <span className="message-icon">👤</span>}
                             </div>
