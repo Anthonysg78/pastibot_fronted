@@ -13,11 +13,16 @@
   },
   "dependencies": {
     "@capacitor-firebase/authentication": "^8.0.1",
+    "@capacitor-firebase/messaging": "^8.0.1",
     "@capacitor/android": "^7.4.5",
     "@capacitor/app": "7.1.0",
+    "@capacitor/camera": "^7.0.3",
     "@capacitor/core": "7.4.3",
+    "@capacitor/filesystem": "^7.1.6",
     "@capacitor/haptics": "7.0.2",
     "@capacitor/keyboard": "7.0.3",
+    "@capacitor/local-notifications": "^8.0.0",
+    "@capacitor/preferences": "^7.0.3",
     "@capacitor/status-bar": "7.0.3",
     "@ionic/react": "^8.5.0",
     "@ionic/react-router": "^8.5.0",
@@ -31,8 +36,10 @@
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-icons": "^5.5.0",
+    "react-phone-input-2": "^2.15.1",
     "react-router": "^5.3.4",
-    "react-router-dom": "^5.3.4"
+    "react-router-dom": "^5.3.4",
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
     "@capacitor/cli": "7.4.3",

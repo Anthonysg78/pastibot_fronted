@@ -17,7 +17,8 @@ import CompleteProfile from "./pages/CompleteProfile";
 import CareTabs from "./pages/care/CareTabs";
 import PatientTabs from "./pages/patient/PatientTabs";
 
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 /* Core CSS required for Ionic components to work properly */
 import "@ionic/react/css/core.css";
@@ -108,19 +109,31 @@ const App: React.FC = () => {
               <Password />
             </Route>
 
-            {/* PANTALLAS PRIVADAS */}
-            <Route path="/care" component={CareTabs} />
-            <Route path="/patient" component={PatientTabs} />
+            {/* PANTALLAS PRIVADAS PROTEGIDAS */}
+            <ProtectedRoute path="/care" component={CareTabs} />
+            <ProtectedRoute path="/patient" component={PatientTabs} />
 
-            {/* REDIRECCIÓN POR DEFECTO */}
+            {/* REDIRECCIÓN INTELIGENTE */}
             <Route exact path="/">
-              <Redirect to="/splash" />
+              <RootRedirect />
             </Route>
           </IonRouterOutlet>
         </IonReactRouter>
       </AuthProvider>
     </IonApp>
   );
+};
+
+const RootRedirect: React.FC = () => {
+  const { user, loading } = useAuth(); // Necesitamos importar useAuth
+
+  if (loading) return null; // O un spinner
+
+  if (user) {
+    return <Redirect to={user.role === 'PACIENTE' ? '/patient/home' : '/care/home'} />;
+  }
+
+  return <Redirect to="/login" />;
 };
 
 export default App;

@@ -1,0 +1,152 @@
+.photo-upload-modal {
+    --width: 100%;
+    --height: auto;
+    --border-radius: 32px 32px 0 0;
+    align-items: flex-end;
+}
+
+.photo-upload-modal::part(content) {
+    border-radius: 32px 32px 0 0;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.photo-modal-wrapper {
+    padding: 24px;
+    padding-bottom: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.photo-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding-bottom: 16px;
+}
+
+.photo-modal-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #FF9800 0%, #F44336 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+}
+
+.close-btn {
+    background: #f1f5f9;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    cursor: pointer;
+}
+
+.photo-modal-content {
+    text-align: center;
+}
+
+.photo-modal-content p {
+    color: #64748b;
+    font-size: 0.95rem;
+    margin-bottom: 24px;
+}
+
+.option-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.option-card {
+    background: white;
+    border: 1px solid #f1f5f9;
+    border-radius: 24px;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.option-card:active {
+    transform: scale(0.95);
+    background: #f8fafc;
+}
+
+.icon-badge {
+    width: 56px;
+    height: 56px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 4px;
+}
+
+.camera .icon-badge {
+    background: rgba(255, 152, 0, 0.1);
+    color: #FF9800;
+}
+
+.gallery .icon-badge {
+    background: rgba(33, 150, 243, 0.1);
+    color: #2196F3;
+}
+
+.option-card span {
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 1rem;
+}
+
+.option-card small {
+    color: #94a3b8;
+    font-size: 0.75rem;
+}
+
+.photo-modal-footer {
+    display: flex;
+    justify-content: center;
+}
+
+.cancel-footer-btn {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 8px 16px;
+    cursor: pointer;
+}
+
+/* Animations */
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+.photo-modal-wrapper {
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}

@@ -12,10 +12,14 @@ import {
   shieldCheckmarkOutline,
   notificationsOutline
 } from "ionicons/icons";
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import PhotoUploadModal from "../../components/PhotoUploadModal";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../api/axios";
 import StatusModal from "../../components/StatusModal";
+import ConfirmationModal from "../../components/ConfirmationModal";
 import "./CarePage.css";
+import PhoneInput from 'react-phone-input-2';
 
 const CareProfile: React.FC = () => {
   const { user, logout, getProfile } = useAuth();
@@ -26,25 +30,25 @@ const CareProfile: React.FC = () => {
   const [phone, setPhone] = useState(user?.phone || "");
   const [tempPhone, setTempPhone] = useState(user?.phone || "");
   const [gender, setGender] = useState(user?.gender || "No definido");
-  const [showOptions, setShowOptions] = useState(false);
   const [uploading, setUploading] = useState(false);
+
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   // Status Modal State
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalConfig, setModalConfig] = useState<{ type: 'success' | 'error' | 'warning', title: string, message: string }>({
+  const [modalConfig, setModalConfig] = useState<{ type: 'success' | 'error' | 'warning' | 'info', title: string, message: string }>({
     type: 'success',
     title: '',
     message: ''
   });
 
-  const showStatus = (type: 'success' | 'error' | 'warning', title: string, message: string) => {
+  const showStatus = (type: 'success' | 'error' | 'warning' | 'info', title: string, message: string) => {
     setModalConfig({ type, title, message });
     setModalOpen(true);
   };
 
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-  // 🔄 SINCRONIZAR ESTADO CON EL CONTEXTO (Persistencia real al recargar)
+  // 🔄 SINCRONIZAR ESTADO CON EL CONTEXTO
   useEffect(() => {
     if (user) {
       if (user.photoUrl) setPhoto(user.photoUrl);
@@ -60,40 +64,39 @@ const CareProfile: React.FC = () => {
     }
   }, [user]);
 
-  const handlePhotoChange = () => {
-    fileInputRef.current?.click();
-  };
+  const handleSourceSelect = async (source: 'camera' | 'gallery') => {
+    setIsPhotoModalOpen(false);
+    try {
+      const image = await Camera.getPhoto({
+        quality: 90,
+        allowEditing: true,
+        resultType: CameraResultType.Base64,
+        source: source === 'camera' ? CameraSource.Camera : CameraSource.Photos
+      });
 
-  const onFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 2 * 1024 * 1024) {
-      showStatus('warning', 'Imagen pesada', 'La imagen no puede exceder los 2MB.');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64 = reader.result as string;
-      setUploading(true);
-      try {
-        await api.patch("/users/profile", { photoUrl: base64 });
-        setPhoto(base64);
-        if (getProfile) getProfile(); // Actualizar contexto global
-      } catch (err) {
-        console.error("Error subiendo foto:", err);
-        alert("No se pudo subir la foto");
-      } finally {
-        setUploading(false);
+      if (image.base64String) {
+        setUploading(true);
+        const base64 = `data:image/${image.format};base64,${image.base64String}`;
+        try {
+          await api.patch("/users/profile", { photoUrl: base64 });
+          setPhoto(base64);
+          if (getProfile) getProfile();
+          showStatus('success', '¡Genial!', 'Tu foto de perfil ha sido actualizada.');
+        } catch (err) {
+          console.error("Error subiendo foto:", err);
+          showStatus('error', 'Error', 'No se pudo subir la foto.');
+        } finally {
+          setUploading(false);
+        }
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("Error with Camera:", err);
+    }
   };
 
   const handleSave = async () => {
     if (tempBio.length > 150) {
-      alert("La biografía no puede exceder 150 caracteres.");
+      showStatus('warning', 'Validación', 'La biografía no puede exceder 150 caracteres.');
       return;
     }
 
@@ -113,13 +116,6 @@ const CareProfile: React.FC = () => {
   return (
     <IonPage>
       <IonContent fullscreen className="care-page">
-        <input
-          type="file"
-          accept="image/*"
-          ref={fileInputRef}
-          style={{ display: 'none' }}
-          onChange={onFileSelected}
-        />
         <div className="care-bubble b1" />
         <div className="care-bubble b3" />
 
@@ -154,7 +150,7 @@ const CareProfile: React.FC = () => {
                       opacity: uploading ? 0.5 : 1
                     }}
                   />
-                  <div className="edit-avatar-badge" onClick={handlePhotoChange}>
+                  <div className="edit-avatar-badge" onClick={() => setIsPhotoModalOpen(true)}>
                     <IonIcon icon={uploading ? pulseOutline : cameraOutline} className={uploading ? "bt-active-pulse" : ""} />
                   </div>
                 </div>
@@ -194,8 +190,8 @@ const CareProfile: React.FC = () => {
                 </div>
 
                 <div className="care-card shadow-premium" style={{ margin: 0, padding: '20px 15px', borderRadius: '24px', textAlign: 'center' }}>
-                  <div style={{ background: 'rgba(255, 64, 129, 0.1)', width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px' }}>
-                    <IonIcon icon={pulseOutline} style={{ fontSize: '1.3rem', color: '#ff4081' }} />
+                  <div style={{ background: 'rgba(129, 199, 132, 0.1)', width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px' }}>
+                    <IonIcon icon={pulseOutline} style={{ fontSize: '1.3rem', color: '#4caf50' }} />
                   </div>
                   <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800 }}>100%</h3>
                   <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase' }}>Eficacia</p>
@@ -216,7 +212,7 @@ const CareProfile: React.FC = () => {
                   <IonIcon icon={chevronForwardOutline} className="action-arrow" />
                 </div>
 
-                <div className="action-item" onClick={() => alert("Notificaciones (Vía App)")}>
+                <div className="action-item" onClick={() => showStatus('info', 'Notificaciones', 'Las notificaciones se configuran desde los ajustes del sistema.')}>
                   <div className="action-icon" style={{ background: 'rgba(76, 175, 80, 0.1)', color: '#4caf50' }}>
                     <IonIcon icon={notificationsOutline} />
                   </div>
@@ -224,16 +220,11 @@ const CareProfile: React.FC = () => {
                   <IonIcon icon={chevronForwardOutline} className="action-arrow" />
                 </div>
 
-                <div className="action-item" onClick={() => {
-                  if (window.confirm("¿Estás seguro que deseas cerrar sesión?")) {
-                    logout();
-                    showStatus('success', 'Sesión Cerrada', 'Has salido de Pastibot correctamente.');
-                  }
-                }}>
+                <div className="action-item" onClick={() => setIsLogoutModalOpen(true)}>
                   <div className="action-icon" style={{ background: 'rgba(229, 57, 53, 0.1)', color: '#e53935' }}>
                     <IonIcon icon={logOutOutline} />
                   </div>
-                  <div className="action-label" style={{ color: '#e53935' }}>Cerrar Sesión</div>
+                  <div className="action-label" style={{ color: '#e53935' }}>Cerrar Sesión Segura</div>
                   <IonIcon icon={chevronForwardOutline} className="action-arrow" />
                 </div>
               </div>
@@ -258,7 +249,7 @@ const CareProfile: React.FC = () => {
                     style={{ width: '90px', height: '90px', borderRadius: '28px', border: '3px solid var(--primary)' }}
                   />
                 </div>
-                <button className="care-btn small" onClick={handlePhotoChange} style={{ marginTop: '15px', maxWidth: '180px' }}>
+                <button className="care-btn small" onClick={() => setIsPhotoModalOpen(true)} style={{ marginTop: '15px', maxWidth: '180px' }}>
                   Cambiar Imagen
                 </button>
               </div>
@@ -268,7 +259,7 @@ const CareProfile: React.FC = () => {
                 <textarea
                   className="care-textarea"
                   placeholder="Cuéntanos un poco sobre ti..."
-                  value={tempBio || bio}
+                  value={tempBio}
                   onChange={(e) => setTempBio(e.target.value)}
                   maxLength={150}
                   style={{
@@ -286,21 +277,28 @@ const CareProfile: React.FC = () => {
                 />
 
                 <div className="form-group" style={{ marginBottom: '20px' }}>
-                  <label className="input-label">Número de WhatsApp (con código de país)</label>
-                  <input
-                    type="tel"
-                    className="care-input"
-                    placeholder="Ej: +593987654321"
+                  <label className="input-label">Número de WhatsApp</label>
+                  <PhoneInput
+                    country={'ec'}
                     value={tempPhone}
-                    onChange={(e) => setTempPhone(e.target.value)}
-                    style={{
+                    onChange={(phone: string) => setTempPhone('+' + phone)}
+                    inputStyle={{
                       width: '100%',
-                      padding: '14px',
+                      height: '50px',
                       borderRadius: '16px',
                       border: '1px solid rgba(0,0,0,0.1)',
                       background: '#f8fafc',
-                      fontSize: '0.95rem',
-                      color: 'var(--text)'
+                      fontSize: '1rem',
+                      fontFamily: 'inherit'
+                    }}
+                    containerStyle={{
+                      width: '100%',
+                      marginBottom: '20px'
+                    }}
+                    buttonStyle={{
+                      border: 'none',
+                      background: 'transparent',
+                      paddingLeft: '5px'
                     }}
                   />
                 </div>
@@ -333,17 +331,33 @@ const CareProfile: React.FC = () => {
             </div>
           )}
         </div>
+
+        <PhotoUploadModal
+          isOpen={isPhotoModalOpen}
+          onClose={() => setIsPhotoModalOpen(false)}
+          onSelect={handleSourceSelect}
+        />
+
+        <ConfirmationModal
+          isOpen={isLogoutModalOpen}
+          type="warning"
+          title="Cerrar Sesión"
+          message="¿Estás seguro que deseas cerrar sesión de forma segura?"
+          confirmText="Cerrar Sesión"
+          cancelText="Cancelar"
+          onConfirm={() => {
+            setIsLogoutModalOpen(false);
+            logout();
+          }}
+          onCancel={() => setIsLogoutModalOpen(false)}
+        />
+
         <StatusModal
           isOpen={modalOpen}
           type={modalConfig.type}
           title={modalConfig.title}
           message={modalConfig.message}
-          onClose={() => {
-            setModalOpen(false);
-            if (modalConfig.type === 'success' && modalConfig.title === 'Sesión Cerrada') {
-              window.location.href = "/welcome";
-            }
-          }}
+          onClose={() => setModalOpen(false)}
         />
       </IonContent>
     </IonPage>

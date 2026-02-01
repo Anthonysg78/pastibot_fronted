@@ -2571,11 +2571,29 @@ select option {
   background: #48bb78;
 }
 
-.system-health-card {
-  background: white;
-  padding: 25px;
-  border-radius: 30px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+.system-health-card.offline {
+  opacity: 0.7;
+  pointer-events: none;
+  filter: grayscale(0.5);
+  border: 1px dashed #cbd5e0;
+}
+
+.system-health-card.offline .health-value-badge {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+.robot-visual-section.status-offline {
+  border: 1px solid #feb2b2;
+  box-shadow: 0 10px 40px rgba(229, 62, 62, 0.08);
+}
+
+.robot-visual-section.status-offline .robot-aura {
+  background: radial-gradient(circle, rgba(229, 62, 62, 0.1) 0%, transparent 70%);
+}
+
+.robot-visual-section.status-offline .robot-status-main-label {
+  color: #e53e3e;
 }
 
 .health-item {
@@ -2658,4 +2676,205 @@ select option {
 .alert-delete-button {
   color: var(--ion-color-danger, #eb445a) !important;
   font-weight: 700;
+}
+
+/* 🤖 ROBOT FACE SYSTEM */
+.robot-face-container {
+  width: 160px;
+  height: 160px;
+  background: #1a1a1a;
+  border-radius: 45px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 15px;
+  border: 4px solid #333;
+  box-shadow:
+    0 0 0 6px rgba(2, 136, 209, 0.1),
+    inset 0 0 20px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.robot-eyes {
+  display: flex;
+  gap: 35px;
+  margin-bottom: 20px;
+}
+
+.eye {
+  width: 24px;
+  height: 24px;
+  background: #00e5ff;
+  border-radius: 50%;
+  box-shadow: 0 0 15px #00e5ff;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+}
+
+.robot-mouth {
+  width: 40px;
+  height: 4px;
+  background: #00e5ff;
+  border-radius: 4px;
+  box-shadow: 0 0 10px #00e5ff;
+  transition: all 0.4s;
+}
+
+/* --- ESTADOS --- */
+
+/* OK: Feliz y parpadea */
+.status-ok .eye {
+  animation: blink 4s infinite;
+}
+
+.status-ok .robot-mouth {
+  width: 30px;
+  height: 12px;
+  border-radius: 0 0 15px 15px;
+}
+
+/* OFFLINE: Durmiendo (- -) */
+.status-offline .eye {
+  height: 4px;
+  border-radius: 2px;
+  box-shadow: 0 0 5px rgba(0, 229, 255, 0.5);
+}
+
+.status-offline .robot-mouth {
+  width: 15px;
+  opacity: 0.5;
+}
+
+.status-offline .robot-face-container {
+  filter: grayscale(0.8);
+  opacity: 0.7;
+}
+
+/* ERROR: Miedo (X X) */
+.status-error .eye {
+  background: #ff5252;
+  box-shadow: 0 0 15px #ff5252;
+  transform: rotate(45deg);
+  border-radius: 2px;
+}
+
+.status-error .robot-mouth {
+  background: #ff5252;
+  box-shadow: 0 0 10px #ff5252;
+  width: 25px;
+  height: 4px;
+  transform: translateY(5px);
+}
+
+/* DISPENSANDO: Animado (@ @) */
+.status-dispensing .eye {
+  animation: rotateEye 1s infinite linear;
+  border-radius: 40%;
+}
+
+.status-dispensing .robot-face-container {
+  animation: jitter 0.2s infinite;
+}
+
+/* ANIMACIONES */
+@keyframes blink {
+
+  0%,
+  90%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  95% {
+    transform: scaleY(0.1);
+  }
+}
+
+@keyframes rotateEye {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes jitter {
+  0% {
+    transform: translate(0);
+  }
+
+  25% {
+    transform: translate(1px, 1px);
+  }
+
+  50% {
+    transform: translate(-1px, -1px);
+  }
+
+  75% {
+    transform: translate(1px, -1px);
+  }
+
+  100% {
+    transform: translate(0);
+  }
+}
+
+/* 🕒 PREMIUM TIME PICKER */
+.time-picker-container-pro {
+  border-radius: 24px;
+  padding: 8px 15px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 80px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  margin: 15px 0;
+}
+
+.time-picker-visual-hint {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.8rem;
+  opacity: 0.3;
+  filter: blur(1px);
+  pointer-events: none;
+  transition: all 0.5s ease;
+  z-index: 1;
+}
+
+.time-picker-container-pro:hover .time-picker-visual-hint {
+  opacity: 0.6;
+  filter: blur(0px);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.time-picker-container-pro ion-datetime {
+  --color: white !important;
+  --background: transparent !important;
+  flex: 1;
+  z-index: 2;
+}
+
+/* Fix for wheel alignment and visibility */
+.time-picker-container-pro ion-datetime::part(wheel-item) {
+  color: white !important;
+  font-weight: 700;
+}
+
+.time-picker-container-pro ion-datetime::part(active-item) {
+  color: white !important;
+  font-weight: 900;
+}
+
+.time-picker-container-pro ion-datetime::part(wheel-column) {
+  display: flex;
+  justify-content: center;
 }

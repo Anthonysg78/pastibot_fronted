@@ -15,7 +15,12 @@ const Register: React.FC = () => {
   const { user, register: authRegister, loginWithGoogle, loginWithFacebook, loading: authLoading } = useAuth();
 
   const queryParams = new URLSearchParams(location.search);
-  const role = queryParams.get("role") || "PACIENTE"; // CUIDADOR o PACIENTE
+  const [role, setRole] = useState(queryParams.get("role") || "PACIENTE"); // CUIDADOR o PACIENTE
+
+  useEffect(() => {
+    const r = queryParams.get("role");
+    if (r) setRole(r);
+  }, [location.search]);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -183,11 +188,24 @@ const Register: React.FC = () => {
             ¿Ya tienes una cuenta?{" "}
             <span
               className="link"
-              onClick={() => history.push("/login?role=" + role)}
+              onClick={() => history.push(`/login?role=${role.toLowerCase()}`)}
             >
               Iniciar sesión
             </span>
           </p>
+
+          <div style={{ marginTop: '10px', textAlign: 'center' }}>
+            <a
+              onClick={() => {
+                const newRole = role === 'CUIDADOR' ? 'PACIENTE' : 'CUIDADOR';
+                setRole(newRole);
+                history.replace(`/register?role=${newRole}`);
+              }}
+              style={{ fontSize: '0.85rem', color: '#90a4ae', textDecoration: 'none', fontWeight: 600, cursor: 'pointer' }}
+            >
+              ← ¿No quieres ser {role === 'CUIDADOR' ? 'cuidador' : 'paciente'}? Cambiar a {role === 'CUIDADOR' ? 'Paciente' : 'Cuidador'}
+            </a>
+          </div>
 
           <div className="divider">O regístrate con</div>
 
@@ -198,9 +216,10 @@ const Register: React.FC = () => {
                 try {
                   localStorage.setItem("pendingRole", role); // 💾 Guardamos el rol elegido
                   await loginWithGoogle();
-                } catch (err) {
-                  console.error("Firebase Google Error:", err);
-                  showModal('error', 'Error', 'No se pudo registrar con Google.');
+                } catch (err: any) {
+                  console.error("Firebase Google Error details:", err);
+                  const msg = err?.message || JSON.stringify(err);
+                  showModal('error', 'Error', `No se pudo registrar con Google: ${msg}`);
                 }
               }}
             />

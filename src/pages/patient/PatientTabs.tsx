@@ -31,7 +31,13 @@ const PatientTabs: React.FC = () => {
         </Route>
       </IonRouterOutlet>
 
-      <IonTabBar slot="bottom">
+      <IonTabBar slot="bottom" style={{
+        height: '65px',
+        borderTopLeftRadius: '20px',
+        borderTopRightRadius: '20px',
+        paddingBottom: '5px',
+        boxShadow: '0 -5px 20px rgba(0,0,0,0.05)'
+      }}>
         <IonTabButton tab="home" href="/patient/home">
           <IonIcon icon={home} />
           <IonLabel>Inicio</IonLabel>
@@ -42,11 +48,6 @@ const PatientTabs: React.FC = () => {
           <IonLabel>Medicinas</IonLabel>
         </IonTabButton>
 
-        <IonTabButton tab="profile" href="/patient/profile">
-          <IonIcon icon={person} />
-          <IonLabel>Perfil</IonLabel>
-        </IonTabButton>
-
         <IonTabButton tab="robot" href="/patient/robot">
           <IonIcon icon={hardwareChipOutline} />
           <IonLabel>Robot</IonLabel>
@@ -55,6 +56,11 @@ const PatientTabs: React.FC = () => {
         <IonTabButton tab="history" href="/patient/history">
           <IonIcon icon={time} />
           <IonLabel>Historial</IonLabel>
+        </IonTabButton>
+
+        <IonTabButton tab="profile" href="/patient/profile">
+          <IonIcon icon={person} />
+          <IonLabel>Perfil</IonLabel>
         </IonTabButton>
       </IonTabBar>
 

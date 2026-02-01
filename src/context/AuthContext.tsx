@@ -16,6 +16,7 @@ import {
 } from "firebase/auth";
 import { Capacitor } from "@capacitor/core"; // <--- Added this
 import { auth, googleProvider, facebookProvider } from "../firebase/config";
+import { FirebaseMessaging } from "@capacitor-firebase/messaging"; // 🔔 Import notificaciones
 
 interface User {
   id: number;
@@ -64,6 +65,19 @@ export const AuthProvider = ({ children }: any) => {
       if (res.data) {
         setUser(res.data);
         setLoading(false);
+        // 🔔 REGISTRAR TAMBIÉN AL REFRESCAR SESIÓN
+        if (Capacitor.isNativePlatform()) {
+          // Definimos la función aquí también o la hacemos accesible?
+          // Como registerPushNotifications depende de api (que ya tiene header), 
+          // lo mejor es invocarla si está definida, pero al ser closure, necesitamos definirla antes o usar un useEffect.
+          // Simplificación: Llamada directa a permisos
+          FirebaseMessaging.requestPermissions().then(async (perm) => {
+            if (perm.receive === 'granted') {
+              const { token } = await FirebaseMessaging.getToken();
+              if (token) api.post('/auth/update-fcm', { token }).catch(console.error);
+            }
+          }).catch(() => { });
+        }
       }
     } catch (err: any) {
       console.error("❌ Error en getProfile:", err);
@@ -87,11 +101,63 @@ export const AuthProvider = ({ children }: any) => {
         setAuthToken(accessToken);
         setTokenState(accessToken);
         setUser(loggedUser);
+
+        // 🔔 REGISTRAR NOTIFICACIONES
+        if (Capacitor.isNativePlatform()) {
+          registerPushNotifications();
+        }
+
         return res.data;
       }
     } catch (err) {
       console.error("Error syncing with backend:", err);
       throw err;
+    }
+  };
+
+  // 🔔 Helper para pedir permiso y enviar token
+  const registerPushNotifications = async () => {
+    try {
+      console.log("🔔 Iniciando registro FCM...");
+      const result = await FirebaseMessaging.requestPermissions();
+      if (result.receive === 'granted') {
+        const { token } = await FirebaseMessaging.getToken();
+        if (token) {
+          console.log("🔥 FCM Token obtenido:", token);
+          await api.post('/auth/update-fcm', { token }).catch(e => console.error("Error backend update:", e));
+        }
+      }
+
+      // 🔔 ESCUCHAR NOTIFICACIONES EN PRIMER PLANO (FOREGROUND)
+      await FirebaseMessaging.removeAllListeners();
+      await FirebaseMessaging.addListener('notificationReceived', async (payload) => {
+        console.log("🔔 Notificación en Foreground recibida:", payload);
+
+        // Mostrar alerta local si la app está abierta
+        // Importación dinámica para asegurar que se carga
+        const { LocalNotifications } = await import('@capacitor/local-notifications');
+        try {
+          await LocalNotifications.schedule({
+            notifications: [
+              {
+                title: payload.notification?.title || "Nueva Notificación",
+                body: payload.notification?.body || "Tienes un mensaje nuevo",
+                id: Math.floor(Math.random() * 1000), // Random ID
+                schedule: { at: new Date(Date.now() + 100) }, // Ahora mismo
+                sound: undefined,
+                attachments: [],
+                actionTypeId: '',
+                extra: null
+              }
+            ]
+          });
+        } catch (err) {
+          console.error("Error mostrando notificación local:", err);
+        }
+      });
+
+    } catch (e) {
+      console.log("⚠️ Error registrando Push Notifications:", e);
     }
   };
 

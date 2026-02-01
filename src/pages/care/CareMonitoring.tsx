@@ -8,7 +8,9 @@ import {
     chevronForward, fitness, barChart, list, informationCircle
 } from "ionicons/icons";
 import { api } from "../../api/axios";
-import "./CarePage.css";
+import StatusModal from "../../components/StatusModal";
+
+
 
 interface Patient {
     id: number;
@@ -18,6 +20,7 @@ interface Patient {
     condition?: string;
     userId?: number;
     linkCode?: string;
+    emergencyPhone?: string; // Added field
     user?: {
         photoUrl?: string;
         bio?: string;
@@ -55,6 +58,19 @@ const CareMonitoring: React.FC = () => {
     const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
     const [stats, setStats] = useState<PatientStats | null>(null);
     const [selectedPeriod, setSelectedPeriod] = useState<'today' | 'week' | 'month'>('week');
+
+    // Status Modal State
+    const [modalOpen, setModalOpen] = useState(false);
+    const [modalConfig, setModalConfig] = useState<{ type: 'success' | 'error' | 'warning', title: string, message: string }>({
+        type: 'success',
+        title: '',
+        message: ''
+    });
+
+    const showStatus = (type: 'success' | 'error' | 'warning', title: string, message: string) => {
+        setModalConfig({ type, title, message });
+        setModalOpen(true);
+    };
 
     useEffect(() => {
         loadPatients();
@@ -162,6 +178,22 @@ const CareMonitoring: React.FC = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleContact = () => {
+        if (!selectedPatient?.emergencyPhone) {
+            // alert("El paciente no tiene un número de emergencia registrado.");
+            // Better to show a modal or toast, but for now alert is safer if modal logic isn't fully in place or re-used.
+            // Using a simple alert or just doing nothing.
+            // Wait, we can import StatusModal if we want but I will just use window.alert for simplicity as user requested "contactar".
+            // Actually, I can use the status modal since I saw it in other files.
+            // I'll add the modal logic.
+            // I added modal state above.
+            showStatus('warning', 'Sin contacto', 'El paciente no tiene un número de emergencia registrado.');
+            return;
+        }
+        let phone = selectedPatient.emergencyPhone.replace(/\D/g, '');
+        window.open(`https://wa.me/${phone}`, '_blank');
     };
 
     if (loading && !selectedPatient) {
@@ -294,6 +326,25 @@ const CareMonitoring: React.FC = () => {
                         <div className="pro-adherence-orbit">
                             <div className="orbit-value">{stats?.adherenceRate || 0}%</div>
                             <div className="orbit-label">Cumplimiento</div>
+                            <button
+                                onClick={handleContact}
+                                style={{
+                                    marginTop: '8px',
+                                    background: 'rgba(255, 255, 255, 0.2)',
+                                    border: '1px solid rgba(255,255,255,0.4)',
+                                    borderRadius: '20px',
+                                    padding: '4px 12px',
+                                    color: 'white',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '5px'
+                                }}
+                            >
+                                📞 Contactar
+                            </button>
                         </div>
                     </div>
 

@@ -1,49 +1,140 @@
+/* CompleteProfile.css - Premium Design */
 
 .complete-profile-page {
-    --background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+    --background: #f0f4f8;
+    /* Soft blue-grey background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.cp-container {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.cp-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    width: 100%;
+    max-width: 420px;
+    padding: 40px 30px;
+    border-radius: 30px;
+    box-shadow:
+        0 20px 50px rgba(0, 50, 100, 0.1),
+        0 10px 20px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    text-align: center;
+    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cp-header {
+    margin-bottom: 30px;
+}
+
+.cp-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin: 0;
+    background: linear-gradient(135deg, #0288d1 0%, #26c6da 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+}
+
+.cp-subtitle {
+    font-size: 0.95rem;
+    color: #546e7a;
+    margin-top: 10px;
+    line-height: 1.5;
+}
+
+.cp-form {
     display: flex;
     flex-direction: column;
+    gap: 20px;
 }
 
-.setup-container {
-    padding: 30px;
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-    margin: 20px 20px;
-    margin-top: 50px;
+.cp-input-group {
+    text-align: left;
 }
 
-.setup-input {
-    margin-bottom: 20px;
-    --background: #f8fafc;
-    --padding-start: 15px;
-    --border-radius: 12px;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-}
-
-.save-btn {
-    --background: #ff7043;
-    --background-hover: #f4511e;
-    --border-radius: 16px;
+.cp-input-group label {
+    display: block;
+    font-size: 0.85rem;
     font-weight: 700;
-    margin-top: 20px;
-    height: 55px;
-    --box-shadow: 0 8px 20px rgba(255, 112, 67, 0.3);
+    color: #455a64;
+    margin-bottom: 8px;
+    margin-left: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.setup-title {
-    font-size: 1.8rem;
+.cp-input {
+    --background: #f1f5f9;
+    --padding-start: 20px;
+    --padding-end: 20px;
+    --padding-top: 15px;
+    --padding-bottom: 15px;
+    --placeholder-color: #90a4ae;
+    --placeholder-opacity: 1;
+    --color: #263238;
+    border-radius: 16px;
+    font-size: 1rem;
+    font-weight: 600;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.cp-input.ion-focused {
+    --background: white;
+    border-color: #0288d1;
+    box-shadow: 0 0 0 4px rgba(2, 136, 209, 0.1);
+}
+
+.cp-btn {
+    margin-top: 15px;
+    --background: linear-gradient(135deg, #ff7043 0%, #f4511e 100%);
+    --background-activated: #d84315;
+    --background-hover: #ff5722;
+    --border-radius: 18px;
+    --box-shadow: 0 10px 25px rgba(244, 81, 30, 0.3);
+    height: 56px;
     font-weight: 800;
-    color: #37474f;
-    margin-bottom: 5px;
-    text-align: center;
+    font-size: 1.1rem;
+    letter-spacing: 0.5px;
+    text-transform: none;
+    --color: white;
 }
 
-.setup-subtitle {
-    color: #78909c;
-    text-align: center;
-    margin-bottom: 30px;
-    font-size: 0.95rem;
+/* Animations */
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }

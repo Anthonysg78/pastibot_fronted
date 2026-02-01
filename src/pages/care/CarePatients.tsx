@@ -21,8 +21,10 @@ import { useAuth } from "../../context/AuthContext";
 import { api } from "../../api/axios";
 import { personCircle, chevronForwardOutline, checkmarkCircle, refreshOutline, pencilOutline, closeOutline, saveOutline, trashOutline } from "ionicons/icons";
 import "./CarePage.css";
+import PhoneInput from 'react-phone-input-2';
 
 import StatusModal from "../../components/StatusModal";
+import ConfirmationModal from "../../components/ConfirmationModal";
 
 type Patient = {
   id: number;
@@ -36,6 +38,7 @@ type Patient = {
   user?: {
     photoUrl?: string;
   };
+  robotSerialNumber?: string;
 };
 
 const CarePatients: React.FC = () => {
@@ -64,6 +67,7 @@ const CarePatients: React.FC = () => {
   const [editCondition, setEditCondition] = useState<string>("");
   const [editName, setEditName] = useState<string>("");
   const [editPhone, setEditPhone] = useState<string>("");
+  const [editRobotSerial, setEditRobotSerial] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
 
@@ -135,6 +139,7 @@ const CarePatients: React.FC = () => {
     setEditGender(p.gender || "");
     setEditCondition(p.condition || "");
     setEditPhone(p.emergencyPhone || "");
+    setEditRobotSerial(p.robotSerialNumber || "");
   };
 
   const handleSavePatient = async () => {
@@ -144,9 +149,9 @@ const CarePatients: React.FC = () => {
       await api.patch(`/patients/${editingPatient.id}`, {
         name: editName,
         age: editAge ? Number(editAge) : null,
-        gender: editGender,
         condition: editCondition,
-        emergencyPhone: editPhone
+        emergencyPhone: editPhone,
+        robotSerialNumber: editRobotSerial
       });
       setEditingPatient(null);
       loadPatients(); // Recargar lista
@@ -329,27 +334,16 @@ const CarePatients: React.FC = () => {
           )}
         </div>
 
-        {/* ALERT DE ELIMINACIÓN */}
-        <IonAlert
+        {/* MODAL DE CONFIRMACIÓN DE ELIMINACIÓN */}
+        <ConfirmationModal
           isOpen={!!patientToDelete}
-          onDidDismiss={() => setPatientToDelete(null)}
-          header={'¿Eliminar Paciente?'}
-          subHeader={'Esta acción no se puede deshacer'}
-          message={`¿Estás seguro que deseas eliminar a <strong>${patientToDelete?.name}</strong>? Se borrarán sus datos y recetas.`}
-          buttons={[
-            {
-              text: 'Cancelar',
-              role: 'cancel',
-              cssClass: 'secondary',
-              handler: () => setPatientToDelete(null)
-            },
-            {
-              text: 'Eliminar',
-              handler: confirmDelete,
-              cssClass: 'alert-delete-button',
-            }
-          ]}
-          cssClass="custom-alert"
+          type="danger"
+          title="¿Eliminar Paciente?"
+          message={`¿Estás seguro que deseas eliminar a <strong>${patientToDelete?.name}</strong>? Se borrarán todos sus datos y recetas de forma permanente.`}
+          confirmText="Eliminar"
+          cancelText="Cancelar"
+          onConfirm={confirmDelete}
+          onCancel={() => setPatientToDelete(null)}
         />
 
         {/* MODAL DE EDICIÓN DE PACIENTE */}
@@ -382,12 +376,25 @@ const CarePatients: React.FC = () => {
               </IonItem>
             </div>
 
-            <IonItem className="pro-input-item" style={{ marginBottom: '15px' }}>
-              <IonLabel position="stacked">Teléfono de Emergencia</IonLabel>
-              <IonInput type="tel" value={editPhone} onIonInput={e => setEditPhone(String(e.detail.value))} />
+            <IonItem className="pro-input-item" style={{ marginBottom: '15px', overflow: 'visible' }}>
+              <IonLabel position="stacked" style={{ marginBottom: '10px' }}>Teléfono de Emergencia</IonLabel>
+              <PhoneInput
+                country={'ec'}
+                value={editPhone}
+                onChange={(phone: string) => setEditPhone('+' + phone)}
+                inputStyle={{
+                  width: '100%',
+                  height: '40px',
+                  borderRadius: '10px',
+                  border: '1px solid #ddd',
+                  fontSize: '1rem',
+                }}
+                dropdownStyle={{ zIndex: 10000 }} // Ensure dropdown shows over modal
+                containerStyle={{ width: '100%' }}
+                buttonStyle={{ border: 'none', background: 'transparent' }}
+              />
             </IonItem>
-
-            <IonItem className="pro-input-item" style={{ marginBottom: '30px' }}>
+            <IonItem className="pro-input-item" style={{ marginBottom: '15px' }}>
               <IonLabel position="stacked">Condición / Diagnóstico</IonLabel>
               <IonTextarea
                 value={editCondition}
@@ -395,6 +402,18 @@ const CarePatients: React.FC = () => {
                 autoGrow={true}
                 placeholder="Ej: Hipertensión, Alzheimer etapa 1..."
               />
+            </IonItem>
+
+            <IonItem className="pro-input-item" style={{ marginBottom: '30px' }}>
+              <IonLabel position="stacked">Número de Serie del Robot</IonLabel>
+              <IonInput
+                value={editRobotSerial}
+                onIonInput={e => setEditRobotSerial(String(e.detail.value))}
+                placeholder="Ej: esp32pastibot o PB-001"
+              />
+              <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '5px' }}>
+                Este código vincula al paciente con su robot físico para que la dispensación funcione.
+              </p>
             </IonItem>
 
             <button
@@ -421,7 +440,7 @@ const CarePatients: React.FC = () => {
           onClose={() => setModalOpen(false)}
         />
       </IonContent>
-    </IonPage>
+    </IonPage >
   );
 };
 

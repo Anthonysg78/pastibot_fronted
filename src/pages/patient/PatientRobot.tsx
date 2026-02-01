@@ -46,16 +46,7 @@ const PatientRobot: React.FC = () => {
         api.get("/my/medicines"),
       ]);
 
-      // Enhance status with mocked data for "Pro" look
-      const baseStatus = statusRes.data;
-      const enhancedStatus: RobotStatus = {
-        ...baseStatus,
-        temperature: 32 + Math.floor(Math.random() * 5),
-        uptime: "12d 4h 23m",
-        signalStrength: baseStatus.wifi ? 85 + Math.floor(Math.random() * 10) : 0
-      };
-
-      setRobotStatus(enhancedStatus);
+      setRobotStatus(statusRes.data);
       setLastAction(historyRes.data[0] || null);
       setMedicines(medsRes.data);
     } catch (err) {
@@ -105,165 +96,82 @@ const PatientRobot: React.FC = () => {
   return (
     <IonPage>
       <IonContent fullscreen className="patient-page">
-        <div className="patient-bubble b1"></div>
-        <div className="patient-bubble b2"></div>
-
-        <div className="patient-container robot-dashboard">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="patient-container">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
             <div>
-              <h1 className="patient-title">Mi Robot</h1>
-              <p className="patient-subtitle">Estado y control del dispensador</p>
+              <h1 className="patient-title" style={{ textAlign: 'left' }}>Mi Robot</h1>
+              <p className="patient-subtitle" style={{ textAlign: 'left' }}>Estado del dispensador</p>
             </div>
             <button
-              className={`refresh-btn-pro ${refreshing ? 'rotating' : ''}`}
+              className="refresh-btn-pro"
               onClick={handleRefresh}
               disabled={refreshing}
+              style={{ background: '#fff', border: '1px solid #eee', width: '45px', height: '45px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
-              <IonIcon icon={refreshOutline} />
+              <IonIcon icon={refreshOutline} className={refreshing ? 'rotating' : ''} style={{ fontSize: '1.2rem', color: 'var(--primary)' }} />
             </button>
           </div>
 
-          {/* Visual Robot Section */}
-          <section className="robot-visual-section">
-            <div className={`robot-aura ${robotStatus?.status === 'DISPENSANDO' ? 'dispensing' : robotStatus?.status === 'ERROR' ? 'error' : ''}`}></div>
-            <IonIcon
-              icon={rocket}
-              className="robot-main-icon"
-              style={{ color: robotStatus?.status === 'OK' ? 'var(--primary)' : robotStatus?.status === 'DISPENSANDO' ? '#4caf50' : '#f44336' }}
-            />
-            <div className="robot-status-main-label">
-              {robotStatus?.status === 'OK' ? 'SISTEMA OPERATIVO' :
-                robotStatus?.status === 'DISPENSANDO' ? 'DISPENSANDO...' :
-                  robotStatus?.status === 'ERROR' ? 'FALLA TÉCNICA' : 'DESCONOCIDO'}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
+            <div className="stat-card" style={{ background: '#fff', padding: '20px', borderRadius: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--muted)', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '10px' }}>
+                <IonIcon icon={batteryFull} /> Batería
+              </div>
+              <div style={{ fontSize: '1.8rem', fontWeight: 900 }}>{robotStatus?.batteryPct || 0}%</div>
             </div>
 
-            <div className="robot-connectivity-badges">
-              <div className={`conn-badge ${robotStatus?.wifi ? 'online' : 'offline'}`}>
-                <IonIcon icon={wifi} />
-                {robotStatus?.wifi ? 'WEB LINK ACTIVE' : 'NO CONNECTION'}
+            <div className="stat-card" style={{ background: '#fff', padding: '20px', borderRadius: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--muted)', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '10px' }}>
+                <IonIcon icon={wifi} /> Señal
               </div>
-              <div className="conn-badge">
-                <IonIcon icon={bluetooth} style={{ color: '#2196f3' }} />
-                PASTIBOT-ESP32
-              </div>
+              <div style={{ fontSize: '1.8rem', fontWeight: 900 }}>{robotStatus?.signalStrength || 0} dBm</div>
             </div>
-          </section>
+          </div>
 
-          {/* Tech Stats Grid */}
-          <section className="status-grid-tech">
-            <div className="tech-card">
-              <span className="tech-label">Batería</span>
-              <div className="tech-value-box">
-                <span className="tech-value">{robotStatus?.batteryPct || 0}</span>
-                <span className="tech-unit">%</span>
-                <IonIcon icon={getBatteryIcon(robotStatus?.batteryPct || 0)} style={{ marginLeft: 'auto', opacity: 0.5 }} />
+          <div className="patient-card" style={{ background: '#fff', padding: '25px', borderRadius: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '15px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(2, 136, 209, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <IonIcon icon={thermometer} style={{ fontSize: '1.2rem' }} />
               </div>
-              <div className="tech-progress-mini">
-                <div
-                  className={`tech-progress-fill ${(robotStatus?.batteryPct || 0) > 60 ? 'success' : (robotStatus?.batteryPct || 0) > 20 ? 'warning' : 'danger'}`}
-                  style={{ width: `${robotStatus?.batteryPct || 0}%` }}
-                ></div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase' }}>Temperatura</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{robotStatus?.temperature || 0}°C</div>
               </div>
             </div>
 
-            <div className="tech-card">
-              <span className="tech-label">Señal WiFi</span>
-              <div className="tech-value-box">
-                <span className="tech-value">{robotStatus?.signalStrength || 0}</span>
-                <span className="tech-unit">dBm</span>
-                <IonIcon icon={wifi} style={{ marginLeft: 'auto', opacity: 0.5 }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(2, 136, 209, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <IonIcon icon={sync} style={{ fontSize: '1.2rem' }} />
               </div>
-              <div className="tech-progress-mini">
-                <div
-                  className="tech-progress-fill primary"
-                  style={{ width: `${robotStatus?.signalStrength || 0}%` }}
-                ></div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase' }}>Tiempo en línea</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{robotStatus?.uptime || 'N/A'}</div>
               </div>
             </div>
-          </section>
+          </div>
 
-          {/* System Health */}
-          <section className="system-health-card">
-            <h3 className="pro-card-title"><IonIcon icon={hardwareChip} /> Integridad del Sistema</h3>
-            <div className="health-list">
-              <div className="health-item">
-                <div className="health-icon"><IonIcon icon={thermometer} /></div>
-                <div className="health-info">
-                  <span className="health-name">Temperatura CPU</span>
-                  <span className="health-status-text">Funcionamiento normal</span>
+          <div className="upcoming-section" style={{ marginTop: '30px' }}>
+            <h3 className="section-title">Dispensación Manual</h3>
+            {medicines.length > 0 ? medicines.map(med => (
+              <div
+                key={med.id}
+                className="upcoming-card"
+                onClick={() => !dispensing && handleDispense(med.id)}
+                style={{ background: '#fff', padding: '15px', borderRadius: '18px', marginBottom: '10px', display: 'flex', alignItems: 'center', opacity: dispensing ? 0.6 : 1 }}
+              >
+                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(76, 175, 80, 0.1)', color: '#4caf50', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '15px' }}>
+                  <IonIcon icon={checkmarkCircle} />
                 </div>
-                <div className="health-value-badge">{robotStatus?.temperature}°C</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700 }}>{med.name}</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{med.dosage}</div>
+                </div>
+                <button className="patient-btn small" disabled={dispensing} style={{ margin: 0, width: 'auto' }}>
+                  {dispensing ? <IonSpinner name="dots" /> : 'DISPENSAR'}
+                </button>
               </div>
-
-              <div className="health-item">
-                <div className="health-icon"><IonIcon icon={sync} /></div>
-                <div className="health-info">
-                  <span className="health-name">Uptime</span>
-                  <span className="health-status-text">Tiempo desde el último reinicio</span>
-                </div>
-                <div className="health-value-badge" style={{ background: 'rgba(33, 150, 243, 0.1)', color: '#1976d2' }}>
-                  {robotStatus?.uptime}
-                </div>
-              </div>
-
-              <div className="health-item">
-                <div className="health-icon"><IonIcon icon={time} /></div>
-                <div className="health-info">
-                  <span className="health-name">Sincronización Cloud</span>
-                  <span className="health-status-text">Último reporte de estado</span>
-                </div>
-                <div className="health-value-badge" style={{ background: 'rgba(156, 39, 176, 0.1)', color: '#7b1fa2' }}>
-                  {robotStatus ? new Date(robotStatus.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Action Section */}
-          <section className="dispense-actions-section">
-            <h3 className="pro-card-title"><IonIcon icon={flask} /> Dispensación Manual</h3>
-            {medicines.length > 0 ? (
-              medicines.map(med => (
-                <div
-                  key={med.id}
-                  className={`dispense-card-item ${dispensing || robotStatus?.status !== 'OK' ? 'disabled' : ''}`}
-                  onClick={() => handleDispense(med.id)}
-                >
-                  <div className="pill-visual-icon">
-                    <IonIcon icon={checkmarkCircle} />
-                  </div>
-                  <div className="pill-info-mini">
-                    <span className="pill-name-mini">{med.name}</span>
-                    <span className="pill-dosage-mini">{med.dosage}</span>
-                  </div>
-                  <button className="btn-dispense-mini" disabled={dispensing || robotStatus?.status !== 'OK'}>
-                    {dispensing ? <IonSpinner name="dots" /> : 'DISPENSAR'}
-                  </button>
-                </div>
-              ))
-            ) : (
-              <p className="no-history">No tienes medicinas configuradas para dispensar.</p>
-            )}
-          </section>
-
-          {/* Recent Activity */}
-          {lastAction && (
-            <section className="system-health-card" style={{ marginBottom: '40px' }}>
-              <h3 className="pro-card-title"><IonIcon icon={alertCircle} /> Último Evento</h3>
-              <div className="health-item" style={{ border: 'none', padding: 0 }}>
-                <div className="health-icon" style={{ background: lastAction.status === 'TAKEN' ? 'rgba(76, 175, 80, 0.1)' : 'rgba(2, 136, 209, 0.1)', color: lastAction.status === 'TAKEN' ? '#4caf50' : '#0288d1' }}>
-                  <IonIcon icon={lastAction.status === 'TAKEN' ? checkmarkCircle : flask} />
-                </div>
-                <div className="health-info">
-                  <span className="health-name">{lastAction.medicine.name}</span>
-                  <span className="health-status-text">{new Date(lastAction.dispensedAt).toLocaleString()}</span>
-                </div>
-                <div className="health-value-badge" style={{ background: lastAction.status === 'TAKEN' ? 'rgba(76, 175, 80, 0.1)' : 'rgba(2, 136, 209, 0.1)', color: lastAction.status === 'TAKEN' ? '#2e7d32' : '#0277bd' }}>
-                  {lastAction.status === 'TAKEN' ? 'TOMADA' : 'DISPENSADA'}
-                </div>
-              </div>
-            </section>
-          )}
+            )) : <p>Cargando medicinas...</p>}
+          </div>
         </div>
       </IonContent>
     </IonPage>

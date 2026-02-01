@@ -68,7 +68,6 @@ const CareHome: React.FC = () => {
   const getAlertStatus = () => {
     if (!robotStatus) return { text: "Sin conexión con robot", icon: "⚠️" };
     if (robotStatus.status === "ERROR") return { text: "Robot con problemas", icon: "🔴" };
-    if (robotStatus.batteryPct < 20) return { text: "Batería baja", icon: "🔋" };
     if (!robotStatus.wifi) return { text: "Robot sin WiFi", icon: "📶" };
     return { text: "Todo en orden", icon: "✅" };
   };
@@ -129,9 +128,8 @@ const CareHome: React.FC = () => {
             <h3>Estado del robot</h3>
             {robotStatus ? (
               <>
-                <p>📶 WiFi: {robotStatus.wifi ? "Conectado" : "Desconectado"}</p>
-                <p>🔋 Batería: {robotStatus.batteryPct}%</p>
-                <p>📊 Estado: {robotStatus.status}</p>
+                <p>📶 WiFi: {robotStatus.wifi ? "Sincronizado" : "Sin conexión"}</p>
+                <p>🤖 Estado: <strong>{robotStatus.status}</strong></p>
               </>
             ) : (
               <p>No disponible</p>

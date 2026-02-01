@@ -1,6 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import 'react-phone-input-2/lib/style.css';
 
 const container = document.getElementById('root');
 

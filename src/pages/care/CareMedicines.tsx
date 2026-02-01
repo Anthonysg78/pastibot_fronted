@@ -44,6 +44,7 @@ import { api } from "../../api/axios";
 import { useParams } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import StatusModal from "../../components/StatusModal";
+import ConfirmationModal from "../../components/ConfirmationModal";
 import "./CarePage.css";
 
 const DAYS = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do"];
@@ -99,16 +100,18 @@ const CareMedicines: React.FC = () => {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [scheduleMode, setScheduleMode] = useState<'frequency' | 'manual'>('frequency');
   const [selectedInterval, setSelectedInterval] = useState<number | null>(8);
+  const [inventory, setInventory] = useState<any[]>([]);
+  const [medToDelete, setMedToDelete] = useState<Med | null>(null);
 
   // Status Modal State
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalConfig, setModalConfig] = useState<{ type: 'success' | 'error' | 'warning', title: string, message: string }>({
+  const [modalConfig, setModalConfig] = useState<{ type: 'success' | 'error' | 'warning' | 'info', title: string, message: string }>({
     type: 'success',
     title: '',
     message: ''
   });
 
-  const showStatus = (type: 'success' | 'error' | 'warning', title: string, message: string) => {
+  const showStatus = (type: 'success' | 'error' | 'warning' | 'info', title: string, message: string) => {
     setModalConfig({ type, title, message });
     setModalOpen(true);
   };
@@ -138,12 +141,21 @@ const CareMedicines: React.FC = () => {
     // Si no hay token, no intentar nada hasta que AuthContext lo proporcione
     if (!localStorage.getItem("token")) return;
 
-    if (!activePatientId) {
-      loadPatients();
-    } else {
+    loadPatients(); // Cargar siempre para tener los nombres disponibles en la UI
+    if (activePatientId) {
       loadMeds(activePatientId);
+      loadInventory();
     }
   }, [activePatientId]);
+
+  const loadInventory = async () => {
+    try {
+      const res = await api.get("/robot/inventory");
+      setInventory(res.data);
+    } catch (err) {
+      console.error("Error cargando inventario:", err);
+    }
+  };
 
   const loadPatients = async () => {
     try {
@@ -226,7 +238,8 @@ const CareMedicines: React.FC = () => {
       }
       setOpen(false);
       resetForm();
-      showStatus('success', '¡Guardado!', editingMedId ? 'Medicina actualizada.' : 'Nueva medicina añadida correctamente.');
+      const patientName = patients.find(p => p.id.toString() === activePatientId)?.name || "el paciente";
+      showStatus('success', '¡Guardado!', `${editingMedId ? 'Medicina actualizada' : 'Nueva medicina añadida'} correctamente para ${patientName}.`);
     } catch (err: any) {
       console.error("Error guardando medicina:", err);
       showStatus('error', 'Error', 'No se pudo guardar la medicina.');
@@ -257,11 +270,16 @@ const CareMedicines: React.FC = () => {
     setOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm("¿Estás seguro de eliminar este medicamento?")) return;
+  const handleDelete = (m: Med) => {
+    setMedToDelete(m);
+  };
+
+  const confirmDeleteMed = async () => {
+    if (!medToDelete) return;
     try {
-      await api.delete(`/patients/${activePatientId}/medicines/${id}`);
-      setMeds(meds.filter(m => m.id !== id));
+      await api.delete(`/patients/${activePatientId}/medicines/${medToDelete.id}`);
+      setMeds(meds.filter(m => m.id !== medToDelete.id));
+      setMedToDelete(null);
       showStatus('success', 'Eliminado', 'El medicamento ha sido borrado.');
     } catch (err) {
       console.error("Error eliminando medicina:", err);
@@ -296,39 +314,33 @@ const CareMedicines: React.FC = () => {
         <div className="care-bubble b2" />
 
         <div className="care-container">
-          <h1 className="care-title">Medicamentos</h1>
-          <p className="care-subtitle">Gestiona y añade tus medicinas</p>
+          <h1 className="care-title" style={{ fontSize: '1.8rem' }}>
+            {activePatientId ? `Medicamentos para ${patients.find(p => p.id.toString() === activePatientId)?.name || 'Paciente'}` : 'Medicamentos'}
+          </h1>
+          <p className="care-subtitle">Gestiona y añade las medicinas del tratamiento</p>
 
           {activePatientId && patients.find(p => p.id.toString() === activePatientId) && (
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '10px',
+              gap: '15px',
               background: 'white',
-              padding: '10px 20px',
-              borderRadius: '15px',
-              marginBottom: '20px',
-              boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
-              border: '1px solid rgba(0,0,0,0.03)'
+              padding: '15px 22px',
+              borderRadius: '24px',
+              marginBottom: '25px',
+              boxShadow: '0 8px 25px rgba(0,0,0,0.04)',
+              border: '1px solid rgba(0,0,0,0.02)'
             }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--primary-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800 }}>
+              <div style={{ width: '45px', height: '45px', borderRadius: '15px', background: 'var(--primary-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: '1.2rem' }}>
                 {patients.find(p => p.id.toString() === activePatientId)?.name?.charAt(0) || 'P'}
               </div>
               <div style={{ flex: 1 }}>
-                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800 }}>{patients.find(p => p.id.toString() === activePatientId)?.name || 'Paciente'}</h3>
+                <span style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '2px' }}>Paciente Activo</span>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#1e293b' }}>{patients.find(p => p.id.toString() === activePatientId)?.name}</h3>
                 <p style={{ margin: 0, fontSize: '0.75rem', opacity: 0.6 }}>
-                  Código de vinculación: <span style={{ fontWeight: 800, color: 'var(--primary)' }}>{patients.find(p => p.id.toString() === activePatientId)?.linkCode || '---'}</span>
+                  Código: <span style={{ fontWeight: 700 }}>{patients.find(p => p.id.toString() === activePatientId)?.linkCode || '---'}</span>
                 </p>
               </div>
-              <button
-                onClick={() => {
-                  localStorage.removeItem("activePatientId");
-                  setActivePatientId(null);
-                }}
-                style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: 'none', padding: '6px 12px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700 }}
-              >
-                Cambiar
-              </button>
             </div>
           )}
           {!activePatientId && (
@@ -404,7 +416,7 @@ const CareMedicines: React.FC = () => {
                     <button className="med-action-btn edit" onClick={() => handleEdit(m)}>
                       <IonIcon icon={createOutline} />
                     </button>
-                    <button className="med-action-btn delete" onClick={() => handleDelete(m.id)}>
+                    <button className="med-action-btn delete" onClick={() => handleDelete(m)}>
                       <IonIcon icon={trashOutline} />
                     </button>
                   </div>
@@ -481,25 +493,72 @@ const CareMedicines: React.FC = () => {
               overscrollBehavior: 'contain'
             }}>
               <div className="modal-inner" style={{ padding: 0 }}>
-                {/* 📸 MULTI-IMAGE UPLOAD SECTION */}
-                <div className="image-upload-section" style={{ marginBottom: '25px' }}>
-                  <IonLabel style={{ fontWeight: 700, display: 'block', marginBottom: '10px', color: 'var(--primary)' }}>Fotos del Medicamento (Máx 3)</IonLabel>
-                  <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                {/* 1. MEDICINE SELECTION & CORE DETAILS */}
+                <div style={{ padding: '0 5px' }}>
+                  <IonItem lines="full" className="input-premium">
+                    <IonLabel position="stacked" style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.9rem' }}>Seleccionar Medicamento (Inventario Robot)</IonLabel>
+                    {inventory.length > 0 ? (
+                      <IonSelect
+                        value={inventory.find(i => i.medicineName === manualName)?.id}
+                        onIonChange={e => {
+                          const selectedInv = inventory.find(i => i.id === e.detail.value);
+                          if (selectedInv) {
+                            setManualName(selectedInv.medicineName);
+                            setSlot(selectedInv.slot);
+                          }
+                        }}
+                        placeholder="Elige una medicina del robot"
+                        interface="popover"
+                        className="pro-select-ion"
+                      >
+                        {inventory.map(inv => (
+                          <IonSelectOption key={inv.id} value={inv.id}>
+                            {inv.medicineName} (Carril {inv.slot})
+                          </IonSelectOption>
+                        ))}
+                      </IonSelect>
+                    ) : (
+                      <div style={{ padding: '10px 0', color: '#ef4444', fontSize: '0.85rem', fontWeight: 600 }}>
+                        ⚠️ Configura el inventario en el panel de control.
+                      </div>
+                    )}
+                  </IonItem>
+
+                  <div style={{ display: 'flex', gap: '15px' }}>
+                    <IonItem lines="full" className="input-premium" style={{ flex: 1 }}>
+                      <IonLabel position="stacked" style={{ fontSize: '0.85rem' }}>Dosis</IonLabel>
+                      <IonInput value={manualDose} onIonInput={e => setManualDose(String(e.detail.value))} placeholder="Ej: 1 tableta" />
+                    </IonItem>
+                    <IonItem lines="full" className="input-premium" style={{ flex: 1 }}>
+                      <IonLabel position="stacked" style={{ fontSize: '0.85rem' }}>Categoría</IonLabel>
+                      <IonSelect value={category} onIonChange={e => setCategory(e.detail.value)} interface="popover">
+                        {CATEGORIES.map(c => <IonSelectOption key={c} value={c}>{c}</IonSelectOption>)}
+                      </IonSelect>
+                    </IonItem>
+                  </div>
+                </div>
+
+                {/* 2. VISUALS (IMAGES & ICONS) */}
+                <div style={{ marginTop: '30px', padding: '0 5px' }}>
+                  <IonLabel style={{ fontWeight: 700, display: 'block', marginBottom: '15px', color: '#475569', fontSize: '0.9rem' }}>Identificación Visual</IonLabel>
+
+                  <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
                     {[0, 1, 2].map(idx => (
                       <div
                         key={idx}
                         style={{
-                          width: '85px',
-                          height: '85px',
-                          borderRadius: '20px',
-                          background: '#f0f4f8',
+                          width: '75px',
+                          height: '75px',
+                          borderRadius: '18px',
+                          background: '#f8fafc',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           cursor: 'pointer',
                           overflow: 'hidden',
-                          border: imageUrls[idx] ? '2px solid var(--primary)' : '2px dashed #cbd5e0',
-                          position: 'relative'
+                          border: imageUrls[idx] ? '2px solid var(--primary)' : '2px dashed #e2e8f0',
+                          position: 'relative',
+                          transition: 'all 0.2s'
                         }}
                         onClick={() => {
                           if (!imageUrls[idx]) document.getElementById('med-photo-input')?.click();
@@ -508,15 +567,14 @@ const CareMedicines: React.FC = () => {
                         {imageUrls[idx] ? (
                           <>
                             <img src={imageUrls[idx]} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            <button
+                            <div
                               onClick={(e) => { e.stopPropagation(); setImageUrls(imageUrls.filter((_, i) => i !== idx)); }}
                               style={{
                                 position: 'absolute',
-                                top: '2px',
-                                right: '2px',
-                                background: '#ff5252',
+                                top: '4px',
+                                right: '4px',
+                                background: 'rgba(239, 68, 68, 0.9)',
                                 color: 'white',
-                                border: 'none',
                                 borderRadius: '50%',
                                 width: '18px',
                                 height: '18px',
@@ -525,272 +583,184 @@ const CareMedicines: React.FC = () => {
                                 alignItems: 'center',
                                 justifyContent: 'center'
                               }}
-                            >×</button>
+                            >×</div>
                           </>
                         ) : (
-                          <div style={{ color: '#718096', textAlign: 'center' }}>
-                            <IonIcon icon={medkit} style={{ fontSize: '1.5rem' }} />
-                          </div>
+                          <IonIcon icon={addCircleOutline} style={{ color: '#cbd5e0', fontSize: '1.4rem' }} />
                         )}
                       </div>
                     ))}
-                    {imageUrls.length < 3 && (
-                      <input
-                        type="file"
-                        id="med-photo-input"
-                        hidden
-                        accept="image/*"
-                        multiple
-                        onChange={handleFileChange}
-                      />
-                    )}
+                    <input type="file" id="med-photo-input" hidden accept="image/*" multiple onChange={handleFileChange} />
                   </div>
-                </div>
 
-                <div className="icon-selector-premium" style={{ marginBottom: '20px' }}>
-                  <IonLabel style={{ fontWeight: 700, display: 'block', marginBottom: '10px', color: 'var(--primary)' }}>Icono Alternativo (Opcional)</IonLabel>
-                  <div className="icons-scroll" style={{ display: 'flex', gap: '12px', overflowX: 'auto', padding: '5px' }}>
+                  <div className="icons-scroll" style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '5px 0' }}>
                     {ICONS.map(item => (
                       <div
                         key={item.id}
                         onClick={() => setSelectedIcon(item.id)}
                         style={{
-                          width: '50px',
-                          height: '50px',
-                          minWidth: '50px',
+                          minWidth: '45px',
+                          height: '45px',
                           borderRadius: '12px',
-                          background: selectedIcon === item.id ? 'var(--primary-gradient)' : '#f0f4f8',
-                          color: selectedIcon === item.id ? 'white' : '#5c6b7a',
+                          background: selectedIcon === item.id ? 'var(--primary-gradient)' : '#f1f5f9',
+                          color: selectedIcon === item.id ? 'white' : '#94a3b8',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           cursor: 'pointer',
-                          transition: '0.3s',
-                          boxShadow: selectedIcon === item.id ? '0 4px 15px rgba(2, 136, 209, 0.4)' : 'none'
+                          transition: '0.3s'
                         }}
                       >
-                        <IonIcon icon={item.icon} style={{ fontSize: '1.4rem' }} />
+                        <IonIcon icon={item.icon} style={{ fontSize: '1.2rem' }} />
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <IonItem lines="full" className="input-premium">
-                  <IonLabel position="stacked">Nombre del Medicamento</IonLabel>
-                  <IonInput value={manualName} onIonInput={e => setManualName(String(e.detail.value))} placeholder="Ej. Paracetamol" />
-                </IonItem>
-
-                <div style={{ display: 'flex', gap: '15px', marginTop: '10px' }}>
-                  <IonItem lines="full" className="input-premium" style={{ flex: 1 }}>
-                    <IonLabel position="stacked">Dosis</IonLabel>
-                    <IonInput value={manualDose} onIonInput={e => setManualDose(String(e.detail.value))} />
-                  </IonItem>
-                  <IonItem lines="full" className="input-premium" style={{ flex: 1 }}>
-                    <IonLabel position="stacked">Categoría</IonLabel>
-                    <IonSelect value={category} onIonChange={e => setCategory(e.detail.value)} interface="popover">
-                      {CATEGORIES.map(c => <IonSelectOption key={c} value={c}>{c}</IonSelectOption>)}
-                    </IonSelect>
-                  </IonItem>
-                </div>
-
-                <IonItem lines="full" className="input-premium" style={{ marginTop: '10px' }}>
-                  <IonLabel position="stacked">Instrucciones Especiales</IonLabel>
+                {/* 3. EXTRA INFO */}
+                <IonItem lines="full" className="input-premium" style={{ marginTop: '20px' }}>
+                  <IonLabel position="stacked" style={{ fontSize: '0.85rem' }}>Instrucciones Especiales (Opcional)</IonLabel>
                   <IonTextarea
                     value={instructions}
                     onIonInput={e => setInstructions(String(e.detail.value))}
-                    placeholder="Ej. Tomar con mucha agua después del almuerzo."
+                    placeholder="Ej. Tomar con mucha agua..."
                     autoGrow={true}
                   />
                 </IonItem>
 
-                <div className="scheduling-premium" style={{ marginTop: '30px', padding: '20px', background: '#f8fafc', borderRadius: '24px', border: '1px solid #e2e8f0' }}>
-                  <IonLabel style={{ fontWeight: 800, color: 'var(--primary)', display: 'block', marginBottom: '8px', fontSize: '1.2rem' }}>
-                    <IonIcon icon={timeOutline} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
-                    Plan de Administración
-                  </IonLabel>
+                {/* 4. SCHEDULING (TIME PLAN) */}
+                <div className="scheduling-premium" style={{ marginTop: '35px', padding: '22px', background: '#f8fafc', borderRadius: '28px', border: '1px solid #edf2f7' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                    <IonLabel style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '1.1rem' }}>
+                      <IonIcon icon={timeOutline} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+                      Planificación
+                    </IonLabel>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>Repetir</span>
+                      <IonToggle checked={repeat} onIonChange={e => setRepeat(e.detail.checked)} style={{ transform: 'scale(0.8)' }} />
+                    </div>
+                  </div>
 
-                  <div style={{ display: 'flex', background: '#e2e8f0', padding: '4px', borderRadius: '12px', marginBottom: '20px', marginTop: '10px' }}>
+                  <div style={{ display: 'flex', background: '#e2e8f0', padding: '3px', borderRadius: '12px', marginBottom: '18px' }}>
                     <button
                       type="button"
                       onClick={() => setScheduleMode('frequency')}
-                      style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', background: scheduleMode === 'frequency' ? 'white' : 'transparent', fontWeight: 800, color: scheduleMode === 'frequency' ? 'var(--primary)' : '#64748b', transition: '0.3s', fontSize: '0.9rem' }}
-                    >Por Frecuencia</button>
+                      style={{ flex: 1, padding: '9px', borderRadius: '10px', border: 'none', background: scheduleMode === 'frequency' ? 'white' : 'transparent', fontWeight: 700, color: scheduleMode === 'frequency' ? 'var(--primary)' : '#64748b', fontSize: '0.85rem', transition: '0.2s' }}
+                    >Frecuencia</button>
                     <button
                       type="button"
                       onClick={() => setScheduleMode('manual')}
-                      style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', background: scheduleMode === 'manual' ? 'white' : 'transparent', fontWeight: 800, color: scheduleMode === 'manual' ? 'var(--primary)' : '#64748b', transition: '0.3s', fontSize: '0.9rem' }}
+                      style={{ flex: 1, padding: '9px', borderRadius: '10px', border: 'none', background: scheduleMode === 'manual' ? 'white' : 'transparent', fontWeight: 700, color: scheduleMode === 'manual' ? 'var(--primary)' : '#64748b', fontSize: '0.85rem', transition: '0.2s' }}
                     >Manual</button>
                   </div>
 
                   {scheduleMode === 'frequency' ? (
-                    <div className="frequency-mode-ui" style={{ animation: 'fadeIn 0.3s ease' }}>
-                      <IonLabel style={{ fontWeight: 700, display: 'block', marginBottom: '10px', fontSize: '0.9rem', color: '#475569' }}>¿Cada cuántas horas?</IonLabel>
-                      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '8px' }}>
+                    <div style={{ animation: 'fadeIn 0.2s ease' }}>
+                      <div style={{ display: 'flex', gap: '6px', marginBottom: '18px', overflowX: 'auto', paddingBottom: '5px' }}>
                         {[4, 6, 8, 12, 24].map(h => (
                           <button
                             key={h}
                             type="button"
                             onClick={() => setSelectedInterval(h)}
-                            style={{
-                              padding: '12px 18px',
-                              borderRadius: '14px',
-                              background: selectedInterval === h ? 'var(--primary)' : 'white',
-                              color: selectedInterval === h ? 'white' : 'var(--primary)',
-                              border: '1.5px solid #e0e6ed',
-                              fontSize: '0.9rem',
-                              fontWeight: 800,
-                              minWidth: '70px',
-                              boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
-                              transition: '0.2s'
-                            }}
-                          >
-                            {h}h
-                          </button>
+                            style={{ padding: '10px 14px', borderRadius: '12px', background: selectedInterval === h ? 'var(--primary)' : 'white', color: selectedInterval === h ? 'white' : 'var(--primary)', border: '1px solid #e2e8f0', fontSize: '0.8rem', fontWeight: 700, transition: '0.2s' }}
+                          >{h}h</button>
                         ))}
                       </div>
-
-                      <IonLabel style={{ fontWeight: 700, display: 'block', marginBottom: '12px', fontSize: '0.85rem', color: '#475569' }}>Hora de la primera toma</IonLabel>
-                      <div style={{ background: 'white', borderRadius: '24px', padding: '10px 20px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+                      <div
+                        className="time-picker-container-pro"
+                        style={{
+                          background: parseInt(currentTime.split(':')[0]) >= 19 || parseInt(currentTime.split(':')[0]) < 6
+                            ? 'linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d)'
+                            : 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                          position: 'relative',
+                          overflow: 'hidden'
+                        }}
+                      >
+                        <div className="time-picker-visual-hint">
+                          {parseInt(currentTime.split(':')[0]) >= 19 || parseInt(currentTime.split(':')[0]) < 6 ? '🌙' : '☀️'}
+                        </div>
                         <IonDatetime
                           presentation="time"
                           preferWheel={true}
+                          hourCycle="h23"
                           value={`2024-01-01T${currentTime}`}
                           onIonChange={e => setCurrentTime(String(e.detail.value).substring(11, 16))}
-                          style={{ '--background': 'transparent', fontSize: '1.3rem', fontWeight: 800, '--color': '#1a202c', width: '100%', maxWidth: '200px' } as any}
+                          style={{ '--background': 'transparent', fontSize: '1.2rem', fontWeight: 800, '--color': 'white', width: '100%' } as any}
                         />
-                        <span style={{ marginLeft: 'auto', color: '#94a3b8', fontSize: '0.85rem', fontWeight: 700 }}>Primera toma</span>
+                        <span style={{ marginLeft: 'auto', color: 'rgba(255,255,255,0.8)', fontSize: '0.7rem', fontWeight: 700, paddingRight: '15px', zIndex: 2 }}>Primera toma</span>
                       </div>
                     </div>
                   ) : (
-                    <div className="manual-mode-ui" style={{ animation: 'fadeIn 0.3s ease' }}>
-                      <IonLabel style={{ fontWeight: 700, display: 'block', marginBottom: '12px', fontSize: '0.85rem', color: '#475569' }}>Seleccionar Hora</IonLabel>
-                      <div style={{
-                        background: 'white',
-                        borderRadius: '24px',
-                        padding: '10px 20px',
-                        border: '1px solid #e2e8f0',
-                        display: 'flex',
-                        alignItems: 'center',
-                        boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
-                        marginBottom: '20px'
-                      }}>
+                    <div style={{ animation: 'fadeIn 0.2s ease' }}>
+                      <div
+                        className="time-picker-container-pro"
+                        style={{
+                          background: parseInt(currentTime.split(':')[0]) >= 19 || parseInt(currentTime.split(':')[0]) < 6
+                            ? 'linear-gradient(135deg, #2c3e50, #000000)'
+                            : 'linear-gradient(135deg, #00c6ff, #0072ff)',
+                          boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+                        }}
+                      >
+                        <div className="time-picker-visual-hint">
+                          {parseInt(currentTime.split(':')[0]) >= 19 || parseInt(currentTime.split(':')[0]) < 6 ? '🌙' : '☀️'}
+                        </div>
                         <IonDatetime
                           presentation="time"
                           preferWheel={true}
+                          hourCycle="h23"
                           value={`2024-01-01T${currentTime}`}
                           onIonChange={e => setCurrentTime(String(e.detail.value).substring(11, 16))}
-                          style={{ '--background': 'transparent', fontSize: '1.3rem', fontWeight: 800, '--color': '#1a202c', width: '100%', maxWidth: '200px' } as any}
+                          style={{ '--background': 'transparent', fontSize: '1.2rem', fontWeight: 800, '--color': 'white', width: '100%' } as any}
                         />
                         <button
                           type="button"
                           onClick={() => { if (!times.includes(currentTime)) setTimes([...times, currentTime].sort()); }}
-                          style={{ marginLeft: 'auto', padding: '12px 20px', borderRadius: '14px', background: 'var(--primary)', color: 'white', border: 'none', fontWeight: 800, fontSize: '0.9rem', boxShadow: '0 4px 12px rgba(2, 136, 209, 0.25)' }}
+                          style={{ marginLeft: 'auto', padding: '10px 20px', borderRadius: '14px', background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none', fontWeight: 800, fontSize: '0.85rem', backdropFilter: 'blur(10px)', zIndex: 2 }}
                         >Añadir</button>
                       </div>
                     </div>
                   )}
 
-                  {/* Result Timeline (Visible in both modes) */}
-                  <div className="times-visual-timeline" style={{ position: 'relative', marginTop: '25px', paddingLeft: '20px' }}>
-                    <div style={{ position: 'absolute', left: '7px', top: '5px', bottom: '5px', width: '2px', background: 'linear-gradient(to bottom, #0288d1, #81d4fa, #e2e8f0)', borderRadius: '2px' }}></div>
-
-                    {times.length > 0 ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {times.map((t, idx) => (
-                          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                            <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: 'white', border: '3px solid var(--primary)', position: 'relative', left: '-12px', zIndex: 2, boxShadow: '0 0 0 4px #f8fafc' }}></div>
-                            <div style={{
-                              flex: 1,
-                              background: 'white',
-                              padding: '12px 18px',
-                              borderRadius: '16px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              border: '1px solid #f1f5f9',
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
-                            }}>
-                              <div>
-                                <span style={{ fontWeight: 800, color: '#1e293b', fontSize: '1.1rem' }}>{t}</span>
-                                <span style={{ fontSize: '0.7rem', color: '#94a3b8', background: '#f1f5f9', padding: '2px 8px', borderRadius: '8px', marginLeft: '10px' }}>
-                                  {parseInt(t.split(':')[0]) < 12 ? 'Mañana' : parseInt(t.split(':')[0]) < 18 ? 'Tarde' : 'Noche'}
-                                </span>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => setTimes(times.filter((_, i) => i !== idx))}
-                                style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: 'none', borderRadius: '8px', width: '30px', height: '30px', fontSize: '20px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                              >×</button>
-                            </div>
+                  {/* Timeline logic remains pretty same but more compact */}
+                  <div style={{ position: 'relative', marginTop: '20px', paddingLeft: '15px' }}>
+                    <div style={{ position: 'absolute', left: '5px', top: '5px', bottom: '5px', width: '2px', background: '#e2e8f0', borderRadius: '2px' }}></div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {times.map((t, idx) => (
+                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'white', border: '2px solid var(--primary)', position: 'relative', left: '-14px', zIndex: 2 }}></div>
+                          <div style={{ flex: 1, background: 'white', padding: '10px 14px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid #f8fafc', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                            <span style={{ fontWeight: 800, color: '#1e293b', fontSize: '1.1rem' }}>{t}</span>
+                            <button
+                              type="button"
+                              onClick={() => setTimes(times.filter((_, i) => i !== idx))}
+                              style={{ background: 'transparent', color: '#ef4444', border: 'none', fontSize: '18px', fontWeight: 800 }}
+                            >×</button>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div style={{ padding: '30px 20px', textAlign: 'center', background: 'white', borderRadius: '20px', border: '2px dashed #e2e8f0', color: '#94a3b8' }}>
-                        <p style={{ margin: 0, fontWeight: 600 }}>Aún no hay horarios definidos</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '30px', padding: '0 5px' }}>
-                  <div>
-                    <IonLabel style={{ fontWeight: 800, color: '#475569', fontSize: '1rem' }}>Repetir Diariamente</IonLabel>
-                    <p style={{ margin: 0, fontSize: '0.75rem', color: '#94a3b8' }}>Activar recordatorios automáticos</p>
-                  </div>
-                  <IonToggle checked={repeat} onIonChange={e => setRepeat(e.detail.checked)} />
-                </div>
-
-                <div className="slot-picker-advanced" style={{ marginTop: '20px' }}>
-                  <IonLabel style={{ fontWeight: 700, color: 'var(--primary)' }}>Asignar Carril del Robot</IonLabel>
-                  <div className="slots-grid-premium" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px', marginTop: '10px' }}>
-                    {[1, 2, 3, 4, 5, 6].map(num => (
-                      <div
-                        key={num}
-                        className={`slot-box ${slot === num ? "selected" : ""}`}
-                        onClick={() => setSlot(num)}
-                        style={{
-                          height: '50px',
-                          borderRadius: '12px',
-                          background: slot === num ? 'var(--primary-gradient)' : '#f0f4f8',
-                          color: slot === num ? 'white' : '#555',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 800,
-                          cursor: 'pointer',
-                          transition: '0.3s'
-                        }}
-                      >
-                        <span style={{ fontSize: '10px', opacity: 0.7 }}>M</span>
-                        {num}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {repeat && (
-                  <div className="days-selector" style={{ marginTop: '40px' }}>
-                    <IonLabel style={{ fontWeight: 700, color: '#666', marginBottom: '10px', display: 'block' }}>Días de Repetición</IonLabel>
-                    <div className="days-grid" style={{ display: 'flex', gap: '5px', justifyContent: 'space-between' }}>
-                      {DAYS.map(d => (
-                        <div key={d} className={`day-chip-lite ${selectedDays.includes(d) ? "active" : ""}`} onClick={() => toggleDay(d)}
-                          style={{
-                            flex: 1, height: '35px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700,
-                            background: selectedDays.includes(d) ? 'var(--primary)' : '#f0f4f8',
-                            color: selectedDays.includes(d) ? 'white' : '#666',
-                            transition: '0.2s'
-                          }}
-                        >
-                          {d}
                         </div>
                       ))}
                     </div>
                   </div>
+                </div>
+
+                {repeat && (
+                  <div style={{ marginTop: '25px', padding: '0 5px' }}>
+                    <IonLabel style={{ fontWeight: 700, color: '#64748b', marginBottom: '10px', display: 'block', fontSize: '0.85rem' }}>Días activos</IonLabel>
+                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'space-between' }}>
+                      {DAYS.map(d => (
+                        <div key={d} className={`day-chip-lite ${selectedDays.includes(d) ? "active" : ""}`} onClick={() => toggleDay(d)}
+                          style={{
+                            flex: 1, height: '32px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700,
+                            background: selectedDays.includes(d) ? 'var(--primary)' : '#f1f5f9',
+                            color: selectedDays.includes(d) ? 'white' : '#94a3b8',
+                            transition: 'all 0.2s'
+                          }}
+                        >{d}</div>
+                      ))}
+                    </div>
+                  </div>
                 )}
-                {/* Espaciador final para asegurar scroll */}
-                <div style={{ height: '30px' }}></div>
+
+                <div style={{ height: '40px' }}></div>
               </div>
             </div>
 
@@ -988,6 +958,16 @@ const CareMedicines: React.FC = () => {
           </div>
         </IonModal>
 
+        <ConfirmationModal
+          isOpen={!!medToDelete}
+          type="danger"
+          title="¿Eliminar Medicamento?"
+          message={`¿Estás seguro que deseas eliminar <strong>${medToDelete?.name}</strong>? Esta acción quitará el medicamento del recordatorio del paciente.`}
+          confirmText="Eliminar"
+          cancelText="Cancelar"
+          onConfirm={confirmDeleteMed}
+          onCancel={() => setMedToDelete(null)}
+        />
         <StatusModal
           isOpen={modalOpen}
           type={modalConfig.type}

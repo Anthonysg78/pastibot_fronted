@@ -5,7 +5,7 @@ import './StatusModal.css';
 
 interface StatusModalProps {
     isOpen: boolean;
-    type: 'success' | 'error' | 'warning';
+    type: 'success' | 'error' | 'warning' | 'info';
     title: string;
     message: string;
     onClose: () => void;
@@ -17,6 +17,7 @@ const StatusModal: React.FC<StatusModalProps> = ({ isOpen, type, title, message,
             case 'success': return checkmarkCircleOutline;
             case 'error': return closeCircleOutline;
             case 'warning': return alertCircleOutline;
+            case 'info': return alertCircleOutline;
         }
     };
 

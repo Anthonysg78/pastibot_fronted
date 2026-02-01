@@ -41,28 +41,3 @@ export const sendChatMessage = async (
         };
     }
 };
-/**
- * Envía un archivo de audio para ser transcrito por Whisper
- * @param audioBlob - Blob con la grabación de audio
- * @returns Texto transcrito
- */
-export const transcribeAudio = async (audioBlob: Blob): Promise<{ success: boolean; text?: string; error?: string }> => {
-    try {
-        const formData = new FormData();
-        formData.append('audio', audioBlob, 'recording.webm');
-
-        const response = await api.post<{ success: boolean; text?: string; error?: string }>('/groq/transcribe', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        });
-
-        return response.data;
-    } catch (error: any) {
-        console.error('Error al transcribir audio:', error);
-        return {
-            success: false,
-            error: error.response?.data?.message || 'No se pudo transcribir el audio',
-        };
-    }
-};

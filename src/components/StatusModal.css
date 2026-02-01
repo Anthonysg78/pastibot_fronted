@@ -46,6 +46,11 @@
     color: #ef6c00;
 }
 
+.status-icon-container.info {
+    background: linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%);
+    color: #0288d1;
+}
+
 .status-title {
     font-weight: 900;
     margin: 0 0 12px 0;
@@ -95,4 +100,10 @@
     background: #ef6c00;
     color: white;
     box-shadow: 0 10px 20px rgba(239, 108, 0, 0.3);
+}
+
+.status-btn.info {
+    background: #0288d1;
+    color: white;
+    box-shadow: 0 10px 20px rgba(2, 136, 209, 0.3);
 }

@@ -1,13 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
-import { IonContent, IonPage, IonIcon, IonSpinner, IonTextarea } from "@ionic/react";
+import { IonContent, IonPage, IonIcon, IonSpinner } from "@ionic/react";
 import {
-  call, mail, person, medkit, calendar,
+  call, mail, calendar,
   transgender, cameraOutline, refreshOutline,
-  saveOutline, closeOutline, pencilOutline
+  saveOutline, closeOutline, pencilOutline, logOutOutline,
+  medkit
 } from "ionicons/icons";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../api/axios";
 import StatusModal from "../../components/StatusModal";
+import PhotoUploadModal from "../../components/PhotoUploadModal";
+import ConfirmationModal from "../../components/ConfirmationModal";
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import "./PatientPage.css";
 
 interface PatientData {
@@ -37,16 +41,18 @@ const PatientProfile: React.FC = () => {
   const [editing, setEditing] = useState(false);
   const [tempBio, setTempBio] = useState(user?.bio || "");
   const [saving, setSaving] = useState(false);
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   // Status Modal State
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalConfig, setModalConfig] = useState<{ type: 'success' | 'error' | 'warning', title: string, message: string }>({
+  const [modalConfig, setModalConfig] = useState<{ type: 'success' | 'error' | 'warning' | 'info', title: string, message: string }>({
     type: 'success',
     title: '',
     message: ''
   });
 
-  const showStatus = (type: 'success' | 'error' | 'warning', title: string, message: string) => {
+  const showStatus = (type: 'success' | 'error' | 'warning' | 'info', title: string, message: string) => {
     setModalConfig({ type, title, message });
     setModalOpen(true);
   };
@@ -81,35 +87,33 @@ const PatientProfile: React.FC = () => {
     }
   };
 
-  const handlePhotoClick = () => {
-    fileInputRef.current?.click();
-  };
+  const handleSourceSelect = async (source: 'camera' | 'gallery') => {
+    setIsPhotoModalOpen(false);
+    try {
+      const image = await Camera.getPhoto({
+        quality: 90,
+        allowEditing: true,
+        resultType: CameraResultType.Base64,
+        source: source === 'camera' ? CameraSource.Camera : CameraSource.Photos
+      });
 
-  const onFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 2 * 1024 * 1024) {
-      showStatus('warning', 'Imagen pesada', 'La imagen no puede exceder los 2MB.');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64 = reader.result as string;
-      setUploading(true);
-      try {
-        await api.patch("/users/profile", { photoUrl: base64 });
-        if (getProfile) getProfile();
-        showStatus('success', '¡Foto Actualizada!', 'Tu foto de perfil se ha actualizado con éxito.');
-      } catch (err) {
-        console.error("Error subiendo foto:", err);
-        showStatus('error', 'Error', 'No se pudo actualizar la foto.');
-      } finally {
-        setUploading(false);
+      if (image.base64String) {
+        setUploading(true);
+        const base64 = `data:image/${image.format};base64,${image.base64String}`;
+        try {
+          await api.patch("/users/profile", { photoUrl: base64 });
+          if (getProfile) getProfile();
+          showStatus('success', '¡Foto Actualizada!', 'Tu foto de perfil se ha actualizado con éxito.');
+        } catch (err) {
+          console.error("Error subiendo foto:", err);
+          showStatus('error', 'Error', 'No se pudo actualizar la foto.');
+        } finally {
+          setUploading(false);
+        }
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("Error with Camera:", err);
+    }
   };
 
   const handleSaveBio = async () => {
@@ -131,7 +135,6 @@ const PatientProfile: React.FC = () => {
     if (!patientData) return;
     setSaving(true);
     try {
-      // Necesitamos el patientId. patientData.id es el id de la tabla Patient
       await api.patch(`/patients/update-my-profile`, {
         age: tempAge ? Number(tempAge) : null,
         condition: tempCondition,
@@ -155,18 +158,12 @@ const PatientProfile: React.FC = () => {
         showStatus('warning', 'Sin Teléfono', 'Tu cuidador aún no ha registrado su número de WhatsApp.');
         return;
       }
-
-      // Limpiar número (quitar espacios, guiones, etc)
-      const cleanPhone = patientData.caregiver.phone.replace(/\D/g, '');
+      let cleanPhone = patientData.caregiver.phone.replace(/\D/g, '');
+      if (!cleanPhone.startsWith('593')) {
+        cleanPhone = '593' + (cleanPhone.startsWith('0') ? cleanPhone.substring(1) : cleanPhone);
+      }
       const message = encodeURIComponent(`Hola ${patientData.caregiver.name}, soy ${user?.name} 👋. Necesito ayuda.`);
       window.open(`https://wa.me/${cleanPhone}?text=${message}`, "_blank");
-    }
-  };
-
-  const handleLogout = () => {
-    if (window.confirm("¿Estás seguro que deseas cerrar sesión?")) {
-      logout();
-      showStatus('success', 'Sesión Cerrada', 'Has salido de Pastibot correctamente.');
     }
   };
 
@@ -174,7 +171,7 @@ const PatientProfile: React.FC = () => {
     return (
       <IonPage>
         <IonContent fullscreen className="patient-page">
-          <div className="center-flex" style={{ height: "100%" }}>
+          <div className="center-flex" style={{ height: "100%", display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <IonSpinner name="crescent" color="primary" />
           </div>
         </IonContent>
@@ -185,13 +182,6 @@ const PatientProfile: React.FC = () => {
   return (
     <IonPage>
       <IonContent fullscreen className="patient-page">
-        <input
-          type="file"
-          ref={fileInputRef}
-          style={{ display: "none" }}
-          accept="image/*"
-          onChange={onFileSelected}
-        />
         <div className="patient-bubble b1" />
         <div className="patient-bubble b2" />
 
@@ -206,7 +196,7 @@ const PatientProfile: React.FC = () => {
                 className="patient-avatar-pro"
                 style={{ opacity: uploading ? 0.5 : 1 }}
               />
-              <div className={`edit-photo-badge ${uploading ? 'uploading' : ''}`} onClick={handlePhotoClick}>
+              <div className={`edit-photo-badge ${uploading ? 'uploading' : ''}`} onClick={() => setIsPhotoModalOpen(true)}>
                 <IonIcon icon={uploading ? refreshOutline : cameraOutline} />
               </div>
             </div>
@@ -255,7 +245,6 @@ const PatientProfile: React.FC = () => {
           <h2 className="patient-title" style={{ fontSize: "1.5rem" }}>Mi Información</h2>
           <p className="patient-subtitle">Datos clínicos y de contacto</p>
 
-          {/* 🏥 DATOS CLÍNICOS */}
           <div className="profile-section">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
               <h3 className="section-title" style={{ margin: 0 }}>Detalles de Salud</h3>
@@ -305,12 +294,7 @@ const PatientProfile: React.FC = () => {
                   />
                 </div>
 
-                <button
-                  className="patient-btn"
-                  onClick={handleSaveClinical}
-                  disabled={saving}
-                  style={{ margin: 0, padding: '12px' }}
-                >
+                <button className="patient-btn" onClick={handleSaveClinical} disabled={saving} style={{ margin: 0, padding: '12px' }}>
                   {saving ? <IonSpinner name="dots" /> : "Guardar Cambios"}
                 </button>
               </div>
@@ -343,8 +327,7 @@ const PatientProfile: React.FC = () => {
             )}
           </div>
 
-          {/* 👨‍⚕️ INFORMACIÓN DEL CUIDADOR */}
-          {patientData?.caregiver && (
+          {patientData?.caregiver ? (
             <div className="profile-section">
               <h3 className="section-title">Mi Cuidador</h3>
               <div className="caregiver-card">
@@ -353,9 +336,7 @@ const PatientProfile: React.FC = () => {
                     {patientData.caregiver.photoUrl ? (
                       <img src={patientData.caregiver.photoUrl} alt={patientData.caregiver.name} />
                     ) : (
-                      <div className="avatar-placeholder">
-                        {patientData.caregiver.name.charAt(0).toUpperCase()}
-                      </div>
+                      <div className="avatar-placeholder">{patientData.caregiver.name.charAt(0).toUpperCase()}</div>
                     )}
                   </div>
                   <div className="caregiver-info">
@@ -363,64 +344,90 @@ const PatientProfile: React.FC = () => {
                     <div className="caregiver-role">Responsable Médico</div>
                   </div>
                 </div>
-
-                {patientData.caregiver.bio && (
-                  <div className="caregiver-bio">
-                    "{patientData.caregiver.bio}"
-                  </div>
-                )}
-
-                <div className="caregiver-details-grid">
-                  <div className="detail-item">
-                    <IonIcon icon={mail} />
-                    <div className="detail-text">
-                      <span className="detail-lbl">Email Profesional</span>
-                      <span className="detail-val">{patientData.caregiver.email}</span>
-                    </div>
-                  </div>
-
-                  {patientData.caregiver.phone && (
-                    <div className="detail-item">
-                      <IonIcon icon={call} />
-                      <div className="detail-text">
-                        <span className="detail-lbl">WhatsApp / Tel</span>
-                        <span className="detail-val">{patientData.caregiver.phone}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
                 <button className="whatsapp-btn-pro" onClick={handleWhatsapp}>
                   <IonIcon icon={call} /> Contactar Cuidador
                 </button>
               </div>
             </div>
+          ) : (
+            <div className="profile-section">
+              <h3 className="section-title">Mi Cuidador</h3>
+              <div className="caregiver-card" style={{ textAlign: 'center', padding: '30px 20px' }}>
+                <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '25px' }}>
+                  Ingresa el código que te proporcionó tu cuidador para vincular tu cuenta.
+                </p>
+                <div className="cp-input-group" style={{ marginBottom: '20px' }}>
+                  <input
+                    type="text"
+                    placeholder="CÓDIGO (EJ: ABCD12)"
+                    className="cp-input"
+                    id="linkActionCode"
+                    style={{ textAlign: 'center', textTransform: 'uppercase', letterSpacing: '3px', fontWeight: '800', width: '100%', fontSize: '1.1rem', border: '1px solid #e0e0e0', background: '#fff', padding: '12px', borderRadius: '12px' }}
+                  />
+                </div>
+                <button className="patient-btn" style={{ margin: 0 }} onClick={async () => {
+                  const input = document.getElementById('linkActionCode') as HTMLInputElement;
+                  const code = input.value.trim().toUpperCase();
+                  if (!code) return showStatus('warning', 'Código vacío', 'Ingresa el código por favor.');
+                  setSaving(true);
+                  try {
+                    await api.post("/patients/link", { code });
+                    showStatus('success', '¡Conectado!', 'Te has vinculado exitosamente.');
+                    setTimeout(() => { window.location.reload(); }, 1500);
+                  } catch (err: any) {
+                    try {
+                      await api.patch("/patients/update-my-profile", { caregiverCode: code });
+                      showStatus('success', '¡Conectado!', 'Perfil actualizado con tu cuidador.');
+                      setTimeout(() => { window.location.reload(); }, 1500);
+                    } catch (retryErr: any) {
+                      const msg = retryErr?.response?.data?.message || err?.response?.data?.message || "Código inválido.";
+                      showStatus('error', 'Error', msg);
+                    }
+                  } finally {
+                    setSaving(false);
+                  }
+                }}>
+                  {saving ? <IonSpinner name="dots" /> : "Vincular Cuenta"}
+                </button>
+              </div>
+            </div>
           )}
 
-          <button
-            className="patient-btn"
-            style={{
-              background: "linear-gradient(135deg, #e53935, #c62828)",
-              marginTop: "40px",
-              boxShadow: "0 10px 20px rgba(229, 57, 53, 0.2)"
-            }}
-            onClick={handleLogout}
-          >
-            Cerrar Sesión Segura
-          </button>
+          <div style={{ marginTop: '40px', paddingBottom: '30px', display: 'flex', justifyContent: 'center' }}>
+            <button
+              className="patient-btn danger shadow-premium"
+              style={{ background: "linear-gradient(135deg, #FF5252, #D32F2F)", width: '90%', maxWidth: '400px', borderRadius: '16px', color: 'white', fontWeight: 700, padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}
+              onClick={() => setIsLogoutModalOpen(true)}
+            >
+              <IonIcon icon={logOutOutline} /> Cerrar Sesión Segura
+            </button>
+          </div>
         </div>
 
+        <PhotoUploadModal
+          isOpen={isPhotoModalOpen}
+          onClose={() => setIsPhotoModalOpen(false)}
+          onSelect={handleSourceSelect}
+        />
+        <ConfirmationModal
+          isOpen={isLogoutModalOpen}
+          type="warning"
+          title="Cerrar Sesión"
+          message="¿Estás seguro que deseas cerrar sesión de forma segura?"
+          confirmText="Cerrar Sesión"
+          cancelText="Cancelar"
+          onConfirm={() => {
+            setIsLogoutModalOpen(false);
+            logout();
+          }}
+          onCancel={() => setIsLogoutModalOpen(false)}
+        />
         <StatusModal
           isOpen={modalOpen}
           type={modalConfig.type}
           title={modalConfig.title}
           message={modalConfig.message}
-          onClose={() => {
-            setModalOpen(false);
-            if (modalConfig.type === 'success' && modalConfig.title === 'Sesión Cerrada') {
-              window.location.href = "/welcome";
-            }
-          }}
+          onClose={() => setModalOpen(false)}
         />
       </IonContent>
     </IonPage>

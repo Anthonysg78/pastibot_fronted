@@ -65,30 +65,40 @@ const Login: React.FC = () => {
             const p = user.patientProfile;
             console.log("LOGIN CHECK - User:", user);
             console.log("LOGIN CHECK - Patient Profile:", p);
-            if (!p || !p.age || !p.emergencyPhone) {
-              history.replace("/complete-profile");
-              return;
+            // Verificar si le faltan datos O si le falta CUIDADOR
+            // Si tiene caregiverId o linkCode, asumimos que ya pasó el setup inicial
+            const isLinked = p?.caregiverId || p?.linkCode || p?.emergencyPhone;
+
+            if (!isLinked) {
+              console.log("LOGIN CHECK - Patient incomplete, forcing SelectRole to link.");
+              // Si le falta vinculación, lo mandamos a SelectRole para que ponga el código
+              // OJO: Si ya tiene ROL pero no CUIDADOR, quizás deberíamos mandarlo a una pantalla de "Vincular"
+              // Pero por ahora, SelectRole maneja la entrada de código.
+              // Sin embargo, SelectRole redirige si ya tienes rol...
+              // El usuario dijo: "si ya esta asociado... no me tiene que volver a pedir nada"
+              // Entonces: Solo pedir si NO está asociado.
+
+              // Problema: SelectRole te saca si ya tienes rol. 
+              // Solución rápida: Si tiene rol pero no cuidador, CompleteProfile debería pedir el código? 
+              // O SelectRole debería permitir quedarse si falta el código?
+
+              // Por simplicidad: Si ya tiene rol PAGIENTE, asumimos que completó o está en ello en CompleteProfile.
+              // El usuario se queja de que LO VUELVE A PEDIR.
+              // Si ya tiene rol, el bloque IF (user.role === 'PACIENTE') se ejecuta.
+              // Aquí solo validamos perfil médico.
+              if (!p || !p.age) {
+                history.replace("/complete-profile");
+                return;
+              }
             }
+            console.log("LOGIN CHECK - Patient OK. Going Home.");
             history.replace("/patient/home");
           } else {
             history.replace("/care/home");
           }
         } else {
-          // 🚀 AUTO-ASSIGN ROLE: Si no tiene rol pero sabemos cual quiere
-          if (role === 'PACIENTE' || role === 'CUIDADOR') {
-            console.log(`[AUTO-ROLE] Asignando rol ${role} automáticamente...`);
-            try {
-              await api.post('/auth/set-role', { role });
-              // Refrescamos el usuario para que el context tenga el rol nuevo
-              // NOTA: AuthContext expone getProfile? Sí, lo importamos del hook
-              window.location.reload(); // Manera segura de recargar todo el estado limpio
-            } catch (error) {
-              console.error("Error auto-asignando rol:", error);
-              history.replace("/selectrole?role=" + role);
-            }
-          } else {
-            history.replace("/selectrole?role=" + role);
-          }
+          // 🚀 Si NO tiene rol, preguntar
+          history.replace("/selectrole?role=" + (role || ""));
         }
       }
     };
@@ -152,44 +162,48 @@ const Login: React.FC = () => {
             {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
           </IonButton>
 
-          <div style={{ marginTop: '20px' }}>
-            <p className="signup-text">
-              ¿No tienes una cuenta?{" "}
-              {role === "PACIENTE" ? (
-                <span className="link" onClick={() => history.push("/register?role=PACIENTE")}>
-                  Regístrate aquí
+          <p className="signup-text">
+            {role === 'PACIENTE' ? (
+              <>
+                ¿No tienes cuenta? <span className="link" onClick={() => history.push("/register?role=PACIENTE")}>Regístrate aquí</span>
+                <br />
+                <span style={{ color: '#64748b', fontStyle: 'italic', fontSize: '0.75rem', marginTop: '5px', display: 'block' }}>
+                  (El registro es automático al iniciar con Google)
                 </span>
-              ) : (
-                <span style={{ color: '#64748b', fontStyle: 'italic', fontSize: '0.85rem' }}>
-                  Registro solo para pacientes
-                </span>
-              )}
-            </p>
-            <a
-              onClick={() => history.push("/welcome")}
-              style={{ fontSize: '0.85rem', color: '#90a4ae', textDecoration: 'none', fontWeight: 600, cursor: 'pointer' }}
-            >
-              ← ¿No eres {role === 'CUIDADOR' ? 'cuidador' : 'paciente'}? Cambiar rol
-            </a>
-          </div>
+              </>
+            ) : (
+              <span style={{ color: '#64748b', fontStyle: 'italic', fontSize: '0.85rem' }}>
+                Registro solo para pacientes
+              </span>
+            )}
+          </p>
+          <a
+            onClick={() => {
+              const newRole = role === 'CUIDADOR' ? 'PACIENTE' : 'CUIDADOR';
+              setRole(newRole);
+              history.replace(`/login?role=${newRole.toLowerCase()}`);
+            }}
+            style={{ fontSize: '0.85rem', color: '#90a4ae', textDecoration: 'none', fontWeight: 600, cursor: 'pointer' }}
+          >
+            ← ¿No eres {role === 'CUIDADOR' ? 'cuidador' : 'paciente'}? Cambiar a {role === 'CUIDADOR' ? 'Paciente' : 'Cuidador'}
+          </a>
+        </div>
+        <div className="divider">O inicia sesión con</div>
 
-          <div className="divider">O inicia sesión con</div>
-
-          <div className="socials" style={{ justifyContent: 'center' }}>
-            <FcGoogle
-              className="social-icon google"
-              onClick={async () => {
-                try {
-                  localStorage.setItem("pendingRole", role); // 💾 Guardamos el rol elegido
-                  await loginWithGoogle();
-                } catch (err: any) {
-                  console.error("Firebase Google Error:", err);
-                  const detailedError = err?.response?.data?.message || err?.message || JSON.stringify(err);
-                  showModal('error', 'Error Google', `No se pudo iniciar sesión: ${detailedError}`);
-                }
-              }}
-            />
-          </div>
+        <div className="socials" style={{ justifyContent: 'center' }}>
+          <FcGoogle
+            className="social-icon google"
+            onClick={async () => {
+              try {
+                localStorage.setItem("pendingRole", role); // 💾 Guardamos el rol elegido
+                await loginWithGoogle();
+              } catch (err: any) {
+                console.error("Firebase Google Error:", err);
+                const detailedError = err?.response?.data?.message || err?.message || JSON.stringify(err);
+                showModal('error', 'Error Google', `No se pudo iniciar sesión: ${detailedError}`);
+              }
+            }}
+          />
         </div>
 
         <StatusModal
