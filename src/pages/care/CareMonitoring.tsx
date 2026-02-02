@@ -58,6 +58,7 @@ const CareMonitoring: React.FC = () => {
     const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
     const [stats, setStats] = useState<PatientStats | null>(null);
     const [selectedPeriod, setSelectedPeriod] = useState<'today' | 'week' | 'month'>('week');
+    const [monitoringData, setMonitoringData] = useState<any[]>([]);
 
     // Status Modal State
     const [modalOpen, setModalOpen] = useState(false);
@@ -98,10 +99,11 @@ const CareMonitoring: React.FC = () => {
         try {
             const days = selectedPeriod === 'today' ? 1 : selectedPeriod === 'week' ? 7 : 30;
 
-            const [historyRes, medicinesRes, remindersRes] = await Promise.all([
+            const [historyRes, medicinesRes, remindersRes, monitoringRes] = await Promise.all([
                 api.get(`/patients/${patientId}/history?days=${days}`).catch(() => ({ data: [] })),
                 api.get(`/patients/${patientId}/medicines`).catch(() => ({ data: [] })),
-                api.get(`/patients/${patientId}/reminders`).catch(() => ({ data: [] }))
+                api.get(`/patients/${patientId}/reminders`).catch(() => ({ data: [] })),
+                api.get(`/patients/${patientId}/daily-monitoring`).catch(() => ({ data: [] }))
             ]);
 
             const history = historyRes.data || [];
@@ -172,6 +174,7 @@ const CareMonitoring: React.FC = () => {
                 })),
                 medicineBreakdown
             });
+            setMonitoringData(monitoringRes.data || []);
 
         } catch (err) {
             console.error("Error loading stats:", err);
@@ -380,6 +383,60 @@ const CareMonitoring: React.FC = () => {
                                 <span className="val">{stats?.missedToday || 0}</span>
                                 <span className="lbl">Omitidas</span>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* NUEVO: Tabla de Monitoreo Diario */}
+                    <div className="pro-section-card" style={{ marginTop: '20px' }}>
+                        <h3 className="pro-card-title" style={{ color: 'var(--primary)', marginBottom: '15px' }}>
+                            <IonIcon icon={calendar} style={{ marginRight: '8px' }} />
+                            Cronograma de Hoy
+                        </h3>
+                        <div className="pro-pill-table" style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '16px', padding: '15px' }}>
+                            <div className="pill-header" style={{ display: 'flex', fontWeight: 800, fontSize: '0.7rem', opacity: 0.5, marginBottom: '12px', padding: '0 10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                <span style={{ flex: 1.2 }}>HORA</span>
+                                <span style={{ flex: 2.5 }}>MEDICINA</span>
+                                <span style={{ flex: 1, textAlign: 'right' }}>ESTADO</span>
+                            </div>
+                            {monitoringData.map((item, idx) => (
+                                <div key={idx} className="pill-row" style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    padding: '12px 10px',
+                                    borderBottom: idx === monitoringData.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.05)',
+                                    animation: `fadeIn 0.3s ease forwards ${idx * 0.1}s`,
+                                    opacity: 0
+                                }}>
+                                    <div style={{ flex: 1.2, fontWeight: 800, color: 'var(--primary)', fontSize: '1rem' }}>{item.time}</div>
+                                    <div style={{ flex: 2.5 }}>
+                                        <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>{item.medicineName}</div>
+                                        <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>{item.dosage}</div>
+                                    </div>
+                                    <div style={{ flex: 1, textAlign: 'right' }}>
+                                        {item.status === 'COMPLETED' ? (
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                                <IonIcon icon={checkmarkCircle} style={{ color: 'var(--success)', fontSize: '1.6rem' }} />
+                                                <span style={{ fontSize: '0.6rem', color: 'var(--success)', fontWeight: 700 }}>ENTREGADA</span>
+                                            </div>
+                                        ) : item.status === 'OMITTED' ? (
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                                <IonIcon icon={closeCircle} style={{ color: 'var(--danger)', fontSize: '1.6rem' }} />
+                                                <span style={{ fontSize: '0.6rem', color: 'var(--danger)', fontWeight: 700 }}>OMITIDA</span>
+                                            </div>
+                                        ) : (
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                                <IonIcon icon={time} style={{ color: 'var(--warning)', fontSize: '1.6rem' }} />
+                                                <span style={{ fontSize: '0.6rem', color: 'var(--warning)', fontWeight: 700 }}>PENDIENTE</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                            {monitoringData.length === 0 && (
+                                <div style={{ textAlign: 'center', padding: '30px 10px', opacity: 0.5, fontStyle: 'italic' }}>
+                                    No hay dosis programadas para hoy
+                                </div>
+                            )}
                         </div>
                     </div>
 

@@ -307,6 +307,26 @@ const CareControl: React.FC = () => {
             </div>
           </section>
 
+          {/* Estadísticas de Batería y Señal */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+            <div className="system-health-card" style={{ padding: '15px' }}>
+              <div style={{ fontSize: '0.7rem', opacity: 0.7, fontWeight: 700, textTransform: 'uppercase' }}>
+                <IonIcon icon={getBatteryIcon(robotStatus?.batteryPct || 0)} /> Batería
+              </div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 900, marginTop: '5px' }}>
+                {robotStatus?.batteryPct || 0}%
+              </div>
+            </div>
+            <div className="system-health-card" style={{ padding: '15px' }}>
+              <div style={{ fontSize: '0.7rem', opacity: 0.7, fontWeight: 700, textTransform: 'uppercase' }}>
+                <IonIcon icon={wifi} /> Señal
+              </div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 900, marginTop: '5px' }}>
+                {robotStatus?.signalStrength || 0} dBm
+              </div>
+            </div>
+          </div>
+
 
           {/* System Integrity */}
           <section className={`system-health-card ${robotStatus?.status === 'OFFLINE' ? 'offline' : ''}`}>
