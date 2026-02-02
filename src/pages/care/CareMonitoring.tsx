@@ -51,6 +51,96 @@ interface PatientStats {
 }
 
 const CareMonitoring: React.FC = () => {
+    // ESTILOS INYECTADOS PARA EL DISEÑO PREMIUM
+    useEffect(() => {
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes fadeInUp {
+                from { opacity: 0; transform: translateY(15px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            @keyframes heartbeat {
+                0% { transform: scale(1); }
+                15% { transform: scale(1.1); }
+                30% { transform: scale(1); }
+                45% { transform: scale(1.15); }
+                60% { transform: scale(1); }
+            }
+            .heartbeat { animation: heartbeat 1.5s ease-in-out infinite; }
+            
+            .status-indicator-pro {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 4px;
+            }
+            .icon-circle {
+                width: 48px;
+                height: 48px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.8rem;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }
+            .icon-circle.success { background: #e8f5e9; color: #4ade80; }
+            .icon-circle.danger { background: #fef2f2; color: #f87171; }
+            .icon-circle.warning { background: #fffbeb; color: #fb923c; }
+            .icon-circle.gray { background: #f3f4f6; color: #9ca3af; }
+            
+            .label {
+                font-size: 0.7rem;
+                font-weight: 800;
+                letter-spacing: 0.5px;
+            }
+            .label.success { color: #4ade80; }
+            .label.danger { color: #f87171; }
+            .label.warning { color: #fb923c; }
+            .label.gray { color: #9ca3af; }
+
+            .stat-card-new {
+                background: white;
+                border-radius: 24px;
+                padding: 20px;
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+                flex: 1;
+            }
+            .stat-icon-square {
+                width: 50px;
+                height: 50px;
+                border-radius: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.5rem;
+            }
+            .stat-icon-square.success { background: #f0fdf4; color: #22c55e; }
+            .stat-icon-square.danger { background: #fef2f2; color: #ef4444; }
+            
+            .stat-info-new h3 {
+                margin: 0;
+                font-size: 1.8rem;
+                font-weight: 900;
+                color: #2c3e50;
+                line-height: 1;
+            }
+            .stat-info-new p {
+                margin: 0;
+                font-size: 0.75rem;
+                font-weight: 700;
+                color: #95a5a6;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+        `;
+        document.head.appendChild(style);
+        return () => { document.head.removeChild(style); };
+    }, []);
+
     const history = useHistory();
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
@@ -187,8 +277,48 @@ const CareMonitoring: React.FC = () => {
                 medicineBreakdown
             };
 
+            // --- GENERAR DATA DE MONITOREO DINÁMICO ---
+            let mData = [];
+            if (selectedPeriod === 'today') {
+                mData = monitoringRes.data || [];
+            } else {
+                // Generar historial detallado para el periodo
+                const daysToGen = selectedPeriod === 'week' ? 7 : 30;
+                const dailyResults: any[] = [];
+
+                for (let i = 0; i < daysToGen; i++) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    const dayName = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'][date.getDay()];
+                    const dateStr = date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+
+                    const dayReminders = reminders.filter((r: any) =>
+                        r.days?.toLowerCase().includes(dayName.toLowerCase())
+                    );
+
+                    dayReminders.forEach((rem: any) => {
+                        const log = history.find((h: any) => {
+                            if (h.medicineId !== rem.medicineId) return false;
+                            const hDate = new Date(h.dispensedAt);
+                            return hDate.toDateString() === date.toDateString();
+                            // Aquí podríamos añadir lógica de matching por hora si fuera necesario, 
+                            // pero para histórico suele bastar con el día.
+                        });
+
+                        dailyResults.push({
+                            id: `${rem.id}_${i}`,
+                            time: rem.time,
+                            date: dateStr,
+                            medicineName: rem.medicineName || rem.medicine?.name,
+                            dosage: rem.medicine?.dosage,
+                            status: log ? (log.status === 'TAKEN' || log.status === 'DISPENSED' ? 'COMPLETED' : 'OMITTED') : (i === 0 ? 'PENDING' : 'OMITTED')
+                        });
+                    });
+                }
+                mData = dailyResults.sort((a, b) => b.id.split('_')[1] - a.id.split('_')[1] || a.time.localeCompare(b.time));
+            }
+
             setStats(newStats);
-            const mData = monitoringRes.data || [];
             setMonitoringData(mData);
 
             sessionStorage.setItem(cacheKey, JSON.stringify({
@@ -390,19 +520,23 @@ const CareMonitoring: React.FC = () => {
                         ))}
                     </div>
 
-                    <div className="pro-stats-grid">
-                        <div className="pro-stat-card">
-                            <div className="stat-icon-wrap success"><IonIcon icon={checkmarkCircle} /></div>
-                            <div className="stat-data">
-                                <span className="val">{stats?.completedToday || 0}</span>
-                                <span className="lbl">Suministradas</span>
+                    <div className="pro-stats-grid" style={{ display: 'flex', gap: '15px', marginBottom: '10px' }}>
+                        <div className="stat-card-new">
+                            <div className="stat-icon-square success">
+                                <IonIcon icon={checkmarkCircle} />
+                            </div>
+                            <div className="stat-info-new">
+                                <h3>{stats?.completedToday || 0}</h3>
+                                <p>SUMINISTRADAS</p>
                             </div>
                         </div>
-                        <div className="pro-stat-card">
-                            <div className="stat-icon-wrap alert"><IonIcon icon={closeCircle} /></div>
-                            <div className="stat-data">
-                                <span className="val">{stats?.missedToday || 0}</span>
-                                <span className="lbl">Omitidas</span>
+                        <div className="stat-card-new">
+                            <div className="stat-icon-square danger">
+                                <IonIcon icon={closeCircle} />
+                            </div>
+                            <div className="stat-info-new">
+                                <h3>{stats?.missedToday || 0}</h3>
+                                <p>OMITIDAS</p>
                             </div>
                         </div>
                     </div>
@@ -462,49 +596,73 @@ const CareMonitoring: React.FC = () => {
                                 <div key={idx} className="pill-row" style={{
                                     display: 'flex',
                                     alignItems: 'center',
-                                    padding: '16px 12px',
-                                    marginBottom: '8px',
-                                    borderRadius: '16px',
-                                    background: 'rgba(255, 255, 255, 0.02)',
-                                    borderBottom: 'none',
-                                    transition: 'all 0.3s ease',
-                                    animation: `fadeInUp 0.5s ease forwards ${idx * 0.12}s`,
+                                    padding: '24px 16px',
+                                    marginBottom: '12px',
+                                    borderRadius: '24px',
+                                    background: 'rgba(255, 255, 255, 0.04)',
+                                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    animation: `fadeInUp 0.6s ease forwards ${idx * 0.15}s`,
                                     opacity: 0,
-                                    transform: 'translateY(10px)'
+                                    transform: 'translateY(15px)',
+                                    boxShadow: '0 4px 15px rgba(0,0,0,0.05)'
                                 }}>
                                     <div style={{
-                                        flex: 1.2,
-                                        fontWeight: 900,
-                                        color: 'var(--primary)',
-                                        fontSize: '1.2rem',
-                                        fontFamily: 'Outfit, sans-serif'
-                                    }}>{item.time}</div>
-                                    <div style={{ flex: 2.5 }}>
-                                        <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#fff' }}>{item.medicineName}</div>
-                                        <div style={{ fontSize: '0.8rem', opacity: 0.5, fontWeight: 500 }}>{item.dosage}</div>
+                                        flex: 2,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '2px'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
+                                            <div style={{
+                                                fontWeight: 900,
+                                                color: '#0088cc',
+                                                fontSize: '1.8rem',
+                                                lineHeight: 1,
+                                                fontFamily: 'Outfit, sans-serif'
+                                            }}>{item.time}</div>
+                                            {item.date && <div style={{ fontSize: '0.8rem', fontWeight: 800, opacity: 0.4 }}>{item.date}</div>}
+                                        </div>
+                                        <div style={{
+                                            fontSize: '0.9rem',
+                                            opacity: 0.8,
+                                            fontWeight: 700,
+                                            color: '#2c3e50',
+                                            maxWidth: '180px',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap'
+                                        }}>{item.medicineName || '1 dosis'}</div>
                                     </div>
-                                    <div style={{ flex: 1, textAlign: 'right' }}>
+
+                                    <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
                                         {item.status === 'COMPLETED' ? (
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                                <IonIcon icon={checkmarkCircle} style={{ color: '#4ade80', fontSize: '1.8rem', filter: 'drop-shadow(0 0 8px rgba(74, 222, 128, 0.3))' }} />
-                                                <span style={{ fontSize: '0.6rem', color: '#4ade80', fontWeight: 800, marginTop: '2px' }}>ENTREGADA</span>
+                                            <div className="status-indicator-pro completed">
+                                                <div className="icon-circle success">
+                                                    <IonIcon icon={checkmarkCircle} />
+                                                </div>
+                                                <span className="label success">ENTREGADA</span>
                                             </div>
                                         ) : item.status === 'OMITTED' ? (
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                                <IonIcon icon={closeCircle} style={{ color: '#f87171', fontSize: '1.8rem', filter: 'drop-shadow(0 0 8px rgba(248, 113, 113, 0.3))' }} />
-                                                <span style={{ fontSize: '0.6rem', color: '#f87171', fontWeight: 800, marginTop: '2px' }}>OMITIDA</span>
+                                            <div className="status-indicator-pro omitted">
+                                                <div className="icon-circle danger">
+                                                    <IonIcon icon={closeCircle} />
+                                                </div>
+                                                <span className="label danger">OMITIDA</span>
                                             </div>
                                         ) : item.status === 'PROCESSING' ? (
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                                <div className="processing-indicator">
-                                                    <IonIcon icon={fitness} style={{ color: '#fb923c', fontSize: '1.8rem', filter: 'drop-shadow(0 0 8px rgba(251, 146, 60, 0.3))' }} />
+                                            <div className="status-indicator-pro processing">
+                                                <div className="icon-circle warning heartbeat">
+                                                    <IonIcon icon={fitness} />
                                                 </div>
-                                                <span style={{ fontSize: '0.6rem', color: '#fb923c', fontWeight: 800, marginTop: '2px' }}>ESPERANDO MANO</span>
+                                                <span className="label warning">MANO...</span>
                                             </div>
                                         ) : (
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                                <IonIcon icon={time} style={{ color: '#fbbf24', fontSize: '1.8rem', filter: 'drop-shadow(0 0 8px rgba(251, 191, 36, 0.3))' }} />
-                                                <span style={{ fontSize: '0.6rem', color: '#fbbf24', fontWeight: 800, marginTop: '2px' }}>PENDIENTE</span>
+                                            <div className="status-indicator-pro pending">
+                                                <div className="icon-circle gray">
+                                                    <IonIcon icon={time} />
+                                                </div>
+                                                <span className="label gray">PENDIENTE</span>
                                             </div>
                                         )}
                                     </div>
