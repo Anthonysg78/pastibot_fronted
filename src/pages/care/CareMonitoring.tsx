@@ -182,18 +182,24 @@ const CareMonitoring: React.FC = () => {
 
     const handleContact = () => {
         if (!selectedPatient?.emergencyPhone) {
-            // alert("El paciente no tiene un número de emergencia registrado.");
-            // Better to show a modal or toast, but for now alert is safer if modal logic isn't fully in place or re-used.
-            // Using a simple alert or just doing nothing.
-            // Wait, we can import StatusModal if we want but I will just use window.alert for simplicity as user requested "contactar".
-            // Actually, I can use the status modal since I saw it in other files.
-            // I'll add the modal logic.
-            // I added modal state above.
             showStatus('warning', 'Sin contacto', 'El paciente no tiene un número de emergencia registrado.');
             return;
         }
-        let phone = selectedPatient.emergencyPhone.replace(/\D/g, '');
-        window.open(`https://wa.me/${phone}`, '_blank');
+
+        // Limpiamos todo lo que no sea número
+        let cleanPhone = selectedPatient.emergencyPhone.replace(/\D/g, '');
+
+        // Si no tiene el código de Ecuador (593), lo agregamos
+        if (!cleanPhone.startsWith('593')) {
+            // Si empieza con 0 (muy común en Ecuador), lo quitamos antes de poner el 593
+            if (cleanPhone.startsWith('0')) {
+                cleanPhone = cleanPhone.substring(1);
+            }
+            cleanPhone = '593' + cleanPhone;
+        }
+
+        const message = encodeURIComponent(`Hola ${selectedPatient.name}, soy tu cuidador 👋. ¿Cómo te encuentras?`);
+        window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
     };
 
     if (loading && !selectedPatient) {
