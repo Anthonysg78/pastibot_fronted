@@ -11,16 +11,7 @@ import "./Register.css";
 
 const Register: React.FC = () => {
   const history = useHistory();
-  const location = useLocation();
-  const { user, register: authRegister, loginWithGoogle, loginWithFacebook, loading: authLoading } = useAuth();
-
-  const queryParams = new URLSearchParams(location.search);
-  const [role, setRole] = useState(queryParams.get("role") || "PACIENTE"); // CUIDADOR o PACIENTE
-
-  useEffect(() => {
-    const r = queryParams.get("role");
-    if (r) setRole(r);
-  }, [location.search]);
+  const { user, register: authRegister, loginWithGoogle, loading: authLoading } = useAuth();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -42,30 +33,20 @@ const Register: React.FC = () => {
     setModalOpen(true);
   };
 
-  // 🛡️ Si ya hay sesión, no registrarse otra vez
+  // 🛡️ Si ya hay sesión, redireccionar
   useEffect(() => {
     if (user && !authLoading) {
       if (user.role) {
         history.replace(user.role === "CUIDADOR" ? "/care/home" : "/patient/home");
       } else {
-        history.replace("/selectrole?role=" + role);
+        history.replace("/complete-profile");
       }
     }
   }, [user, history, authLoading]);
 
   const validarFormulario = () => {
-    if (role === 'CUIDADOR') {
-      showModal('error', 'Acceso denegado', 'El registro de cuidadores está deshabilitado. Usa la cuenta maestra.');
-      return false;
-    }
-
-    if (!name || !email || !pass || !confirm) {
-      showModal('warning', 'Campos vacíos', 'Completa todos los campos para continuar.');
-      return false;
-    }
-
-    if (role === 'PACIENTE' && !caregiverCode) {
-      showModal('warning', 'Código requerido', 'Debes ingresar el código de tu cuidador para vincularte.');
+    if (!name || !email || !pass || !confirm || !caregiverCode) {
+      showModal('warning', 'Campos vacíos', 'Completa todos los campos, incluyendo el código de tu cuidador.');
       return false;
     }
 
@@ -75,12 +56,12 @@ const Register: React.FC = () => {
     }
 
     if (!email.includes("@") || !email.includes(".")) {
-      showModal('warning', 'Email inválido', 'Ingresa un correo electrónico profesional válido.');
+      showModal('warning', 'Email inválido', 'Ingresa un correo electrónico válido.');
       return false;
     }
 
     if (pass.length < 8) {
-      showModal('warning', 'Contraseña corta', 'La contraseña debe tener al menos 8 caracteres por seguridad.');
+      showModal('warning', 'Contraseña corta', 'La contraseña debe tener al menos 8 caracteres.');
       return false;
     }
 
@@ -102,12 +83,11 @@ const Register: React.FC = () => {
         email,
         password: pass,
         gender: null,
-        role: role as any,
-        caregiverCode: role === 'PACIENTE' ? caregiverCode : undefined
+        role: 'PACIENTE',
+        caregiverCode: caregiverCode
       });
 
-      showModal('success', '¡Cuenta creada!', 'Te has registrado correctamente en Pastibot.');
-      // La redirección ocurrirá vía useEffect cuando el user se actualice
+      showModal('success', '¡Cuenta creada!', 'Te has registrado correctamente como paciente.');
     } catch (err: any) {
       const msg = err?.response?.data?.message || "Error al registrar usuario.";
       showModal('error', 'Error de registro', msg);
@@ -118,17 +98,13 @@ const Register: React.FC = () => {
 
   return (
     <IonPage>
-      <IonContent fullscreen className={`register-page ${role === 'PACIENTE' ? 'patient-theme' : ''}`}>
+      <IonContent fullscreen className="register-page">
         <div className="top-shape"></div>
         <div className="bottom-shape"></div>
 
         <div className="register-container">
-          <h1 className="title">
-            {role === 'CUIDADOR' ? 'Registro Cuidador' : 'Crear Cuenta'}
-          </h1>
-          <p className="subtitle">
-            {role === 'PACIENTE' ? 'Únete a tu cuidador para empezar' : 'Regístrate para cuidar a tus seres queridos'}
-          </p>
+          <h1 className="title">Crear Cuenta</h1>
+          <p className="subtitle">Únete a tu cuidador para empezar</p>
 
           <form className="register-form" onSubmit={(e) => e.preventDefault()}>
             <input
@@ -145,20 +121,18 @@ const Register: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
             />
 
-            {role === 'PACIENTE' && (
-              <div style={{ marginBottom: '15px' }}>
-                <input
-                  type="text"
-                  placeholder="CÓDIGO CUIDADOR (Ej: PASTIBOT)"
-                  value={caregiverCode}
-                  onChange={(e) => setCaregiverCode(e.target.value.toUpperCase())}
-                  style={{ border: '2px solid #E65100', fontWeight: 'bold', textAlign: 'center', letterSpacing: '2px' }}
-                />
-                <p style={{ fontSize: '0.75rem', color: '#E65100', marginTop: '5px', textAlign: 'center', fontWeight: 600 }}>
-                  ⚠️ Necesitas el código que te dio tu cuidador.
-                </p>
-              </div>
-            )}
+            <div style={{ marginBottom: '15px' }}>
+              <input
+                type="text"
+                placeholder="CÓDIGO CUIDADOR (Ej: PASTIBOT)"
+                value={caregiverCode}
+                onChange={(e) => setCaregiverCode(e.target.value.toUpperCase())}
+                style={{ border: '2px solid #E65100', fontWeight: 'bold', textAlign: 'center', letterSpacing: '2px' }}
+              />
+              <p style={{ fontSize: '0.75rem', color: '#E65100', marginTop: '5px', textAlign: 'center', fontWeight: 600 }}>
+                ⚠️ Necesitas el código que te dio tu cuidador.
+              </p>
+            </div>
 
             <input
               type="password"
@@ -184,57 +158,25 @@ const Register: React.FC = () => {
             </IonButton>
           </form>
 
-          <p className="signin-text">
-            ¿Ya tienes una cuenta?{" "}
-            <span
-              className="link"
-              onClick={() => history.push(`/login?role=${role.toLowerCase()}`)}
-            >
-              Iniciar sesión
-            </span>
+          <p className="signin-text" style={{ marginBottom: '20px' }}>
+            ¿Ya tienes una cuenta? <span className="link" onClick={() => history.push("/login")}>Iniciar sesión</span>
           </p>
-
-          <div style={{ marginTop: '10px', textAlign: 'center' }}>
-            <a
-              onClick={() => {
-                const newRole = role === 'CUIDADOR' ? 'PACIENTE' : 'CUIDADOR';
-                setRole(newRole);
-                history.replace(`/register?role=${newRole}`);
-              }}
-              style={{ fontSize: '0.85rem', color: '#90a4ae', textDecoration: 'none', fontWeight: 600, cursor: 'pointer' }}
-            >
-              ← ¿No quieres ser {role === 'CUIDADOR' ? 'cuidador' : 'paciente'}? Cambiar a {role === 'CUIDADOR' ? 'Paciente' : 'Cuidador'}
-            </a>
-          </div>
 
           <div className="divider">O regístrate con</div>
 
-          <div className="socials">
+          <div className="socials" style={{ justifyContent: 'center' }}>
             <FcGoogle
               className="social-icon google"
               onClick={async () => {
                 try {
-                  localStorage.setItem("pendingRole", role); // 💾 Guardamos el rol elegido
                   await loginWithGoogle();
                 } catch (err: any) {
-                  console.error("Firebase Google Error details:", err);
+                  console.error("Firebase Google Error:", err);
                   const msg = err?.message || JSON.stringify(err);
                   showModal('error', 'Error', `No se pudo registrar con Google: ${msg}`);
                 }
               }}
             />
-            <FaFacebook
-              className="social-icon facebook"
-              onClick={async () => {
-                try {
-                  await loginWithFacebook();
-                } catch (err) {
-                  console.error("Firebase Facebook Error:", err);
-                  showModal('error', 'Error', 'No se pudo registrar con Facebook.');
-                }
-              }}
-            />
-            <FaSquareXTwitter className="social-icon twitter" />
           </div>
         </div>
 

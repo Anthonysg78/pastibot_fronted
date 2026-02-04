@@ -193,34 +193,28 @@ export const AuthProvider = ({ children }: any) => {
     return () => unsubscribe();
   }, [getProfile]);
 
-  // LOGIN Firebase + Sync
+  // LOGIN Backend Direct
   const login = async (email: string, password: string) => {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      return await syncWithBackend(userCredential.user);
+      const res = await api.post("/auth/login", { email, password });
+      if (res.data?.accessToken) {
+        const { accessToken, user: loggedUser } = res.data;
+        localStorage.setItem("token", accessToken);
+        setAuthToken(accessToken);
+        setTokenState(accessToken);
+        setUser(loggedUser);
+        return res.data;
+      }
     } catch (err: any) {
-      console.error("Login Error:", err);
+      console.error("Login Error Backend:", err);
       throw err;
     }
   };
 
-  // REGISTER Firebase + Sync
+  // REGISTER Backend Direct
   const register = async (data: any) => {
     try {
-      const { email, password, name, role, gender, caregiverCode } = data;
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-
-      // Update firebase profile if needed
-      // Notify backend to create the user in our DB
-      const idToken = await getIdToken(userCredential.user);
-      const res = await api.post("/auth/firebase-register", {
-        idToken,
-        name,
-        role,
-        gender,
-        caregiverCode
-      });
-
+      const res = await api.post("/auth/register", data);
       if (res.data?.accessToken) {
         const { accessToken, user: registeredUser } = res.data;
         localStorage.setItem("token", accessToken);
@@ -229,9 +223,8 @@ export const AuthProvider = ({ children }: any) => {
         setUser(registeredUser);
         return res.data;
       }
-      return res.data;
     } catch (err: any) {
-      console.error("Register Error:", err);
+      console.error("Register Error Backend:", err);
       throw err;
     }
   };
