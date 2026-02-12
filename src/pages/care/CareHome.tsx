@@ -59,7 +59,7 @@ const CareHome: React.FC = () => {
         setRobotStatus(data.robotStatus);
         setRecentLogs(data.recentLogs);
         setLoading(false);
-        // Seguimos pidiendo en background para actualizar (Stale-while-revalidate)
+        return; // 🚀 FIX: No pedir en background si la caché es muy fresca (evita spam)
       }
     }
 
